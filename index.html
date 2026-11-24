@@ -12361,6 +12361,7 @@ const App = {
             ${stat('Minutes', num(r?.case_mgmt_minutes), r?.case_mgmt_minutes ? Math.round(r.case_mgmt_minutes/60) + ' hours' : '')}
           </div>
           ${svcTable}
+          ${this.monthlyReferralsHtml?.(month, false) || ''}
         </div></div>
 
       <div class="card" style="margin-top:22px"><div class="card-header">
@@ -14969,6 +14970,7 @@ const App = {
           <tr class="print-total-row"><td>Fee-for-service nights billable</td>
             <td>${num(r?.ffs_nights_billable)}</td><td>${money(r?.ffs_amount)}</td></tr>
         </tbody></table>
+        ${this.censusChartPrintHtml?.(month) || ''}
         <h3>Nights by bed category</h3>
         ${this.monthlyBedTableHtml(r)}
         ${basis}
@@ -15017,6 +15019,7 @@ const App = {
         </tbody></table>
         <h3>By service type</h3>
         ${this.monthlyServiceTableHtml(r)}
+        ${this.monthlyReferralsHtml?.(month, true) || ''}
       </div>
 
       <div class="print-section"><h2>Narrative</h2>
@@ -18338,15 +18341,28 @@ const App = {
 
 (function(){
   /* ==========================================================================
-     Benefit and service connections (programs with contract goals).
+     Benefit and service connections, and service referrals
+     (programs with contract goals).
 
-     The "Participants Connected to Benefits/Services" goal counts completed
-     connections only: a Benefits Assistance or Income / Employment Support
-     contact marked Connected, with the date the benefit was approved or the
-     participant enrolled. Help that has not yet led to a connection is logged
-     as In progress and does not count until a contact records it as Connected.
+     Two kinds of contact carry an outcome:
+       benefits   Benefits Assistance, Income / Employment Support. Records
+                  which benefit, an optional provider, and the outcome.
+       referrals  every service type ending in "Referral". Records who the
+                  participant was referred to, and the outcome.
+     Outcomes: In progress (referred, pending) / Connected (approved, enrolled,
+     admitted or attended) with the date / Denied / not eligible (or did not
+     connect).
 
-     Needs migration 2026-11-22_benefit_connections.sql.
+     The "Participants Connected to Benefits/Services" goal counts distinct
+     participants with a Connected outcome dated in the contract year, so a
+     completed service referral counts the same way a benefit approval does.
+
+     Contacts that come from a case note are edited on the case note form:
+     staff choose what the note counts as, and the referral or benefit fields,
+     there.
+
+     Needs migrations 2026-11-22_benefit_connections.sql and
+     2026-11-24_service_referrals.sql (referred_to).
      ========================================================================== */
 
   const esc = s => App.escape(s ?? '');
@@ -18354,9 +18370,100 @@ const App = {
   const BENEFITS = ['SSI', 'SSDI', 'Medi-Cal', 'CalFresh', 'General Relief', 'CalWORKs', 'Veterans benefits',
                     'Unemployment insurance', 'Employment', 'Job training program', 'Other'];
   const STATUSES = ['In progress', 'Connected', 'Denied / not eligible'];
+  const STATUS_LABEL = {
+    benefit:  { 'In progress':'In progress', 'Connected':'Connected (approved or enrolled)', 'Denied / not eligible':'Denied / not eligible' },
+    referral: { 'In progress':'Referred, pending', 'Connected':'Connected (admitted, enrolled or attended)', 'Denied / not eligible':'Did not connect / declined' }
+  };
 
-  App.SERVICE_MIGRATION_FIELDS = [...(App.SERVICE_MIGRATION_FIELDS || []), 'benefit_type', 'connection_status', 'connected_on'];
+  // New referral types sit with the existing ones in "Referrals & Health".
+  const NEW_TYPES = ['Housing / CES Referral', 'Legal Services Referral', 'ID & Documents Referral', 'Dental / Vision Referral'];
+  {
+    const list = CONFIG.SERVICE_TYPES;
+    let at = list.findIndex(t => t.label === 'Substance Use Services Referral');
+    NEW_TYPES.forEach(label => {
+      if (list.some(t => t.label === label)) return;
+      list.splice(++at, 0, { label, group:'Referrals & Health' });
+    });
+  }
+
+  App.isReferralType = function(type){ return / Referral$/.test(String(type || '')); };
+  App.connectionKind = function(type){
+    return CONNECTION_TYPES.includes(type) ? 'benefit' : this.isReferralType(type) ? 'referral' : null;
+  };
+
+  App.SERVICE_MIGRATION_FIELDS = [...(App.SERVICE_MIGRATION_FIELDS || []), 'benefit_type', 'connection_status', 'connected_on', 'referred_to'];
   App.tracksConnections = function(){ return this.programHas('has_contract_goals_card') && !this.isAgencyFiscal?.(); };
+
+  /* ------------------------------------------------ the shared field block */
+
+  // p = id prefix ('sf' on the service form, 'cnx' on the case note form)
+  App.connectionFieldsHtml = function(p, s){
+    const benefit = s.benefit_type || '';
+    const known = !benefit || BENEFITS.includes(benefit);
+    return `
+      <div class="client-form-grid" style="border:1px solid var(--border, #ddd);border-radius:8px;padding:12px">
+        <div class="field-group" id="${p}-benefit-wrap"><label class="field-label required" for="${p}-benefit">Benefit or service</label>
+          <select id="${p}-benefit" class="field-select"><option value="">Select…</option>
+            ${BENEFITS.map(b => `<option ${(known ? benefit : 'Other') === b ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>
+          <input id="${p}-benefit-other" class="field-input" style="margin-top:8px;display:none" placeholder="Name the benefit or service" value="${esc(known ? '' : benefit)}"></div>
+        <div class="field-group"><label class="field-label" id="${p}-referred-label" for="${p}-referred">Referred to</label>
+          <input id="${p}-referred" class="field-input" value="${esc(s.referred_to || '')}" placeholder="Agency, program or provider"></div>
+        <div class="field-group"><label class="field-label required" for="${p}-conn-status">Outcome</label>
+          <select id="${p}-conn-status" class="field-select">
+            ${STATUSES.map(v => `<option value="${esc(v)}" ${(s.connection_status || 'In progress') === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+        <div class="field-group" id="${p}-connected-on-wrap"><label class="field-label required" id="${p}-connected-on-label" for="${p}-connected-on">Date connected</label>
+          <input id="${p}-connected-on" type="date" class="field-input" value="${esc(this.dateOnly(s.connected_on) || '')}"></div>
+        <div class="field-group full"><div class="field-hint">Only <strong>Connected</strong> counts toward the Benefits/Services goal. Update the outcome on this contact when you learn it.</div></div>
+      </div>`;
+  };
+
+  // Shows and relabels the block for the chosen type.
+  App.syncConnectionFields = function(p, type){
+    const kind = this.connectionKind(type);
+    const wrap = document.getElementById(`${p}-conn-wrap`);
+    if (!wrap) return;
+    wrap.style.display = kind ? '' : 'none';
+    if (!kind) return;
+    const $ = id => document.getElementById(`${p}-${id}`);
+    $('benefit-wrap').style.display = kind === 'benefit' ? '' : 'none';
+    $('benefit-other').style.display = kind === 'benefit' && $('benefit')?.value === 'Other' ? '' : 'none';
+    const lab = $('referred-label');
+    lab.textContent = kind === 'referral' ? 'Referred to' : 'Provider or program (optional)';
+    lab.classList.toggle('required', kind === 'referral');
+    [...$('conn-status').options].forEach(o => { o.textContent = STATUS_LABEL[kind][o.value] || o.value; });
+    $('connected-on-label').textContent = kind === 'referral' ? 'Date connected' : 'Date approved or enrolled';
+    $('connected-on-wrap').style.display = $('conn-status').value === 'Connected' ? '' : 'none';
+  };
+
+  App.bindConnectionFields = function(p, typeEl){
+    const sync = () => this.syncConnectionFields(p, typeEl?.value || '');
+    [typeEl, document.getElementById(`${p}-benefit`), document.getElementById(`${p}-conn-status`)]
+      .forEach(el => el?.addEventListener('change', sync));
+    sync();
+  };
+
+  // Returns { fields } or { problem }. Fields are null for untracked types.
+  App.readConnectionFields = function(p, type, contactDate){
+    const kind = this.connectionKind(type);
+    if (!kind) return { fields: { benefit_type: null, connection_status: null, connected_on: null, referred_to: null } };
+    const $ = id => document.getElementById(`${p}-${id}`);
+    const referred = ($('referred')?.value || '').trim();
+    const status = $('conn-status')?.value || 'In progress';
+    const on = $('connected-on')?.value || '';
+    let benefit = null;
+    if (kind === 'benefit') {
+      const pick = $('benefit')?.value || '';
+      benefit = pick === 'Other' ? (($('benefit-other')?.value || '').trim()) : pick;
+      if (!benefit) return { problem: 'Choose the benefit or service.' };
+    } else if (!referred) return { problem: 'Enter who the participant was referred to.' };
+    if (status === 'Connected' && !on) return { problem: kind === 'referral' ? 'Enter the date the participant connected.' : 'Enter the date the benefit was approved or the participant enrolled.' };
+    if (status === 'Connected' && on > this.localDate()) return { problem: 'The connection date cannot be in the future.' };
+    const fields = { benefit_type: benefit, referred_to: referred || null, connection_status: status,
+                     connected_on: status === 'Connected' ? on : null };
+    return { fields, lateFlag: status === 'Connected' && contactDate && on < contactDate };
+  };
+
+  /* ---------------------------------------------------- the service form */
 
   const previousOpenServiceForm = App.openServiceForm;
   App.openServiceForm = function(id = null, clientId = null, presetType = null, presetName = null){
@@ -18364,65 +18471,23 @@ const App = {
     if (!this.tracksConnections()) return;
     const s = id ? (this.data.clientServices || []).find(x => x.id === id) || {} : {};
     const grid = document.querySelector('#service-body .client-form-grid');
-    if (!grid) return;
-    const benefit = s.benefit_type || '';
-    const known = !benefit || BENEFITS.includes(benefit);
+    if (!grid || document.getElementById('sf-conn-wrap')) return;
     const wrap = document.createElement('div');
     wrap.className = 'field-group full'; wrap.id = 'sf-conn-wrap';
-    wrap.innerHTML = `
-      <div class="client-form-grid" style="border:1px solid var(--border, #ddd);border-radius:8px;padding:12px">
-        <div class="field-group"><label class="field-label required" for="sf-benefit">Benefit or service</label>
-          <select id="sf-benefit" class="field-select"><option value="">Select…</option>
-            ${BENEFITS.map(b => `<option ${(known ? benefit : 'Other') === b ? 'selected' : ''}>${esc(b)}</option>`).join('')}</select>
-          <input id="sf-benefit-other" class="field-input" style="margin-top:8px;display:none" placeholder="Name the benefit or service" value="${esc(known ? '' : benefit)}"></div>
-        <div class="field-group"><label class="field-label required" for="sf-conn-status">Status</label>
-          <select id="sf-conn-status" class="field-select">
-            ${STATUSES.map(v => `<option ${(s.connection_status || 'In progress') === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
-        <div class="field-group" id="sf-connected-on-wrap"><label class="field-label required" for="sf-connected-on">Date approved or enrolled</label>
-          <input id="sf-connected-on" type="date" class="field-input" value="${esc(this.dateOnly(s.connected_on) || '')}"></div>
-        <div class="field-group full"><div class="field-hint">Only <strong>Connected</strong> counts toward the benefits goal.</div></div>
-      </div>`;
+    wrap.innerHTML = this.connectionFieldsHtml('sf', s);
     const notes = document.getElementById('sf-notes')?.closest('.field-group');
     grid.insertBefore(wrap, notes || null);
-
-    const sync = () => {
-      const type = document.getElementById('sf-type')?.value || '';
-      wrap.style.display = CONNECTION_TYPES.includes(type) ? '' : 'none';
-      const other = document.getElementById('sf-benefit')?.value === 'Other';
-      document.getElementById('sf-benefit-other').style.display = other ? '' : 'none';
-      const connected = document.getElementById('sf-conn-status')?.value === 'Connected';
-      document.getElementById('sf-connected-on-wrap').style.display = connected ? '' : 'none';
-    };
-    ['sf-type', 'sf-benefit', 'sf-conn-status'].forEach(i => document.getElementById(i)?.addEventListener('change', sync));
-    sync();
+    this.bindConnectionFields('sf', document.getElementById('sf-type'));
   };
 
   const previousSaveService = App.saveService;
   App.saveService = async function(){
     this._connFields = null;
-    const wrap = document.getElementById('sf-conn-wrap');
-    const type = document.getElementById('sf-type')?.value || '';
-    if (wrap) {
-      if (!CONNECTION_TYPES.includes(type)) {
-        this._connFields = { benefit_type: null, connection_status: null, connected_on: null };
-      } else {
-        const state = document.getElementById('service-save-state');
-        const say = t => { if (state) state.textContent = t; };
-        const pick = document.getElementById('sf-benefit')?.value || '';
-        const benefit = pick === 'Other' ? (document.getElementById('sf-benefit-other')?.value.trim() || '') : pick;
-        const status = document.getElementById('sf-conn-status')?.value || 'In progress';
-        const on = document.getElementById('sf-connected-on')?.value || '';
-        const date = document.getElementById('sf-date')?.value || '';
-        if (!benefit) { say('Choose the benefit or service.'); return; }
-        if (status === 'Connected' && !on) { say('Enter the date the benefit was approved or the participant enrolled.'); return; }
-        if (status === 'Connected' && on > this.localDate()) { say('The approval date cannot be in the future.'); return; }
-        this._connFields = { benefit_type: benefit, connection_status: status,
-                             connected_on: status === 'Connected' ? on : null };
-        if (status === 'Connected' && date && on > date) {
-          // Recording an approval on an earlier contact is fine; flag it so the dates are checked.
-          this.toast('Saved with an approval date after the contact date. Check the dates are right.');
-        }
-      }
+    if (document.getElementById('sf-conn-wrap')) {
+      const type = document.getElementById('sf-type')?.value || '';
+      const r = this.readConnectionFields('sf', type, document.getElementById('sf-date')?.value || '');
+      if (r.problem) { const st = document.getElementById('service-save-state'); if (st) st.textContent = r.problem; return; }
+      this._connFields = r.fields;
     }
     try { return await previousSaveService.call(this); }
     finally { this._connFields = null; }
@@ -18434,6 +18499,74 @@ const App = {
     return previousUpsertServiceRows.call(this, rows);
   };
 
+  /* ------------------------------------------------- the case note form */
+
+  // A note's contact is the service row cn-<note id>. Staff choose what it
+  // counts as here; the database keeps the type when the note is edited later.
+  const noteService = noteId => (App.data.clientServices || []).find(s => s.id === 'cn-' + noteId) || null;
+  const notesAreServices = () => App.programHas('case_notes_as_services');
+
+  const previousOpenNote = App.openCaseNoteForm;
+  App.openCaseNoteForm = function(noteId = null, clientId = null){
+    previousOpenNote.call(this, noteId, clientId);
+    if (!notesAreServices()) return;
+    const body = document.getElementById('case-note-body');
+    if (!body || document.getElementById('cnx-section')) return;
+    const s = (noteId && noteService(noteId)) || { service_type: 'Case Management', duration_minutes: 30 };
+    const groups = this.serviceTypeGroups().filter(([, types]) => types.some(t => !t.session || t.label === 'Occupational Therapy' || t.label === 'Trauma Therapy'));
+    const opts = groups.map(([g, types]) => `<optgroup label="${esc(g)}">${types
+      .filter(t => !t.specify)
+      .map(t => `<option ${t.label === (s.service_type || 'Case Management') ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}</optgroup>`).join('');
+    body.insertAdjacentHTML('beforeend', `<div class="form-section" id="cnx-section"><div class="form-section-title">Service Recorded</div>
+      <div class="client-form-grid">
+        <div class="field-group"><label class="field-label required" for="cnx-type">Counts as</label>
+          <select id="cnx-type" class="field-select">${opts}</select></div>
+        <div class="field-group"><label class="field-label" for="cnx-minutes">Minutes</label>
+          <input id="cnx-minutes" type="number" min="0" class="field-input" value="${esc(s.duration_minutes ?? 30)}"></div>
+        <div class="field-group full" id="cnx-conn-wrap">${this.tracksConnections() ? this.connectionFieldsHtml('cnx', s) : ''}</div>
+        <div class="field-group full"><div class="field-hint">Each note is one service contact. Choose a referral type when the note records a referral, and update its outcome here when you learn it.</div></div>
+      </div></div>`);
+    if (this.tracksConnections()) this.bindConnectionFields('cnx', document.getElementById('cnx-type'));
+    else document.getElementById('cnx-conn-wrap').style.display = 'none';
+  };
+
+  const previousSaveNote = App.saveCaseNote;
+  App.saveCaseNote = async function(){
+    if (!notesAreServices() || !document.getElementById('cnx-section')) return previousSaveNote.apply(this, arguments);
+    const type = document.getElementById('cnx-type')?.value || 'Case Management';
+    const minutes = Math.max(0, Number(document.getElementById('cnx-minutes')?.value || 0)) || 0;
+    const date = document.getElementById('cn-date')?.value || '';
+    const r = this.tracksConnections() ? this.readConnectionFields('cnx', type, date)
+      : { fields: { benefit_type: null, connection_status: null, connected_on: null, referred_to: null } };
+    if (r.problem) { document.getElementById('case-note-save-state').textContent = r.problem; return; }
+    // The id the base save will use for a new note, so the service row can follow it.
+    if (!this.currentCaseNoteId) this.currentCaseNoteId = crypto.randomUUID ? crypto.randomUUID() : 'note_' + Date.now();
+    const noteId = this.currentCaseNoteId;
+    this._pendingNoteService = { noteId, patch: { service_type: type, duration_minutes: minutes, ...r.fields } };
+    try { return await previousSaveNote.apply(this, arguments); }
+    finally { this._pendingNoteService = null; }   // a failed save must not leave a patch behind
+  };
+
+  // The base save reloads data after the note is written; apply the service
+  // details then, once the trigger has created or updated the row.
+  const previousLoadAll = App.loadAll;
+  App.loadAll = async function(...args){
+    const pending = this._pendingNoteService; this._pendingNoteService = null;
+    if (pending) {
+      let { error } = await this.sb.from('holloway_client_services')
+        .update({ ...pending.patch, updated_by: this.user?.email || null, updated_at: new Date().toISOString() })
+        .eq('id', 'cn-' + pending.noteId).eq('program_id', this.program.id);
+      if (error && this.isMissingColumnError?.(error)) {
+        const p = { ...pending.patch }; this.SERVICE_MIGRATION_FIELDS.forEach(f => delete p[f]);
+        ({ error } = await this.sb.from('holloway_client_services').update(p).eq('id', 'cn-' + pending.noteId).eq('program_id', this.program.id));
+      }
+      if (error) this.toast?.('The note was saved, but its service type could not be: ' + error.message, { error:true });
+    }
+    return previousLoadAll.apply(this, args);
+  };
+
+  /* ------------------------------------------------------ services list */
+
   const previousRenderServices = App.renderServices;
   App.renderServices = function(){
     previousRenderServices.call(this);
@@ -18444,14 +18577,58 @@ const App = {
     el.querySelectorAll('#view-services tr [data-edit-service]').forEach(btn => {
       const s = byId.get(String(btn.dataset.editService));
       if (!s || !s.connection_status) return;
+      const kind = this.connectionKind(s.service_type) || 'benefit';
       const cell = btn.closest('tr')?.children[3];
       const cls = s.connection_status === 'Connected' ? 'badge-green' : s.connection_status === 'In progress' ? 'badge-gray' : 'badge-red';
       const when = s.connection_status === 'Connected' && s.connected_on ? ' ' + this.formatDate(this.dateOnly(s.connected_on)) : '';
+      const what = kind === 'referral' ? (s.referred_to || '') : [s.benefit_type, s.referred_to].filter(Boolean).join(' · ');
       if (cell) cell.insertAdjacentHTML('beforeend',
-        `<br><span class="badge ${cls}">${esc(s.benefit_type || '')}: ${esc(s.connection_status)}${esc(when)}</span>`);
+        `<br><span class="badge ${cls}">${esc(what)}: ${esc(STATUS_LABEL[kind][s.connection_status] || s.connection_status)}${esc(when)}</span>`);
     });
   };
+
+  /* ------------------------------------------------------ monthly report */
+
+  // Referrals made in the month, and connections completed in it, by type.
+  App.monthlyReferralRows = function(month){
+    const from = String(month).slice(0, 10);
+    const d = new Date(from + 'T00:00:00');
+    const to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+    const inMonth = x => { const v = this.dateOnly(x); return v && v >= from && v <= to; };
+    const rows = new Map();
+    (this.data.clientServices || []).forEach(s => {
+      const kind = this.connectionKind(s.service_type);
+      if (!kind) return;
+      const key = s.service_type;
+      if (!rows.has(key)) rows.set(key, { type: key, kind, made: 0, people: new Set(), connected: 0, pending: 0, notConnected: 0 });
+      const r = rows.get(key);
+      if (inMonth(s.service_date) && (kind === 'referral' || s.connection_status)) { r.made++; r.people.add(s.client_id); }
+      if (s.connection_status === 'Connected' && inMonth(s.connected_on)) r.connected++;
+      if (inMonth(s.service_date) && s.connection_status === 'In progress') r.pending++;
+      if (inMonth(s.service_date) && s.connection_status === 'Denied / not eligible') r.notConnected++;
+    });
+    return [...rows.values()].filter(r => r.made || r.connected)
+      .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'referral' ? -1 : 1) || a.type.localeCompare(b.type));
+  };
+
+  App.monthlyReferralsHtml = function(month, print){
+    if (!this.tracksConnections() || !month) return '';
+    const rows = this.monthlyReferralRows(month);
+    const n = v => Number(v || 0).toLocaleString();
+    const head = print ? '<h3>Service referrals and connections</h3>'
+      : '<h3 style="font-size:14px;margin:18px 0 8px;color:var(--navy)">Service referrals and connections</h3>';
+    if (!rows.length) return head + `<p class="${print ? 'print-note' : 'field-hint'}">No service referrals or benefit applications recorded this month.</p>`;
+    const tot = k => rows.reduce((t, r) => t + (k === 'people' ? r.people.size : r[k]), 0);
+    const cls = print ? 'print-table' : 'client-table';
+    const table = `<table class="${cls}"><thead><tr><th>Type</th><th>Made this month</th><th>Participants</th><th>Pending</th><th>Did not connect</th><th>Connected this month</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td>${esc(r.type)}</td><td>${n(r.made)}</td><td>${n(r.people.size)}</td><td>${n(r.pending)}</td><td>${n(r.notConnected)}</td><td>${n(r.connected)}</td></tr>`).join('')}
+      <tr class="${print ? 'print-total-row' : ''}" style="${print ? '' : 'font-weight:700'}"><td>Total</td><td>${n(tot('made'))}</td><td>&nbsp;</td><td>${n(tot('pending'))}</td><td>${n(tot('notConnected'))}</td><td>${n(tot('connected'))}</td></tr>
+      </tbody></table>`;
+    const note = `<p class="${print ? 'print-note' : 'field-hint'}">Counted live from the service contacts in the portal. "Connected this month" counts outcomes dated this month, including referrals made earlier; connected outcomes count toward the Benefits/Services goal.</p>`;
+    return head + (print ? table : `<div class="client-table-wrap">${table}</div>`) + note;
+  };
 })();
+
 
 (function(){
   /* ==========================================================================
@@ -20185,10 +20362,12 @@ const App = {
     host.querySelector('#mr-census-chart')?.remove();
     const anchor = [...host.querySelectorAll('.card')].find(c => /Beds and Occupancy/.test(c.querySelector('h2,.card-title')?.textContent || ''));
     if (!anchor) return;
+    (this._censusRows ||= {})[month] = data || [];
     anchor.insertAdjacentHTML('afterend', this.censusChartHtml(month, data || []));
   };
 
-  App.censusChartHtml = function(month, rows){
+  // Builds the chart once for both the screen and the printed report.
+  App.censusChartParts = function(month, rows){
     const reserved = Number(this.contractPeriod?.reservedBeds ?? this.contractPeriod?.reserved_beds ?? 10) || 10;
     const rate = Number(this.contractPeriod?.ffsRate ?? 83) || 83;
     const end = this.monthEnd ? this.monthEnd(month) : month;
@@ -20196,52 +20375,117 @@ const App = {
     for (let d = new Date(month + 'T12:00:00'); this.isoDate(d) <= end; d.setDate(d.getDate() + 1)) days.push(this.isoDate(d));
     const by = {};
     rows.forEach(r => {
-      const k = this.dateOnly(r.service_date), o = by[k] ||= { res: 0, ffs: 0, bill: 0, counted: true };
+      const k = this.dateOnly(r.service_date), o = by[k] ||= { res: 0, ffs: 0, bill: 0 };
       if (r.occupied && !r.absent) { if (r.designation === 'reserved') o.res++; else o.ffs++; }
       if (r.billable) o.bill++;
     });
     const today = this.localDate ? this.localDate() : this.isoDate(new Date());
-    const max = Math.max(15, reserved + 5, ...days.map(d => (by[d]?.res || 0) + (by[d]?.ffs || 0)));
-    const W = 720, H = 200, padL = 28, padB = 22, padT = 10, cw = (W - padL - 4) / days.length;
+    const monthName = new Date(month + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const short = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const capacity = Math.max(15, reserved + 5);
+    const max = Math.max(capacity, ...days.map(d => (by[d]?.res || 0) + (by[d]?.ffs || 0)));
+    const W = 760, H = 270, padL = 46, padR = 8, padT = 30, padB = 44, cw = (W - padL - padR) / days.length;
     const y = v => padT + (H - padT - padB) * (1 - v / max);
-    let bars = '', bands = '', labels = '';
+    const base = y(0);
+
+    // Runs of billable nights, used for the shaded bands and their labels.
+    const prev = d => { const t = new Date(d + 'T12:00:00'); t.setDate(t.getDate() - 1); return this.isoDate(t); };
+    const periods = []; let cur = null;
+    days.forEach((d, i) => { const b = by[d]?.bill || 0;
+      if (b) { if (cur && cur.last === prev(d)) { cur.last = d; cur.n += b; cur.i2 = i; } else { cur = { first: d, last: d, n: b, i1: i, i2: i }; periods.push(cur); } } });
+    const totalBill = periods.reduce((s, p) => s + p.n, 0);
+
+    let grid = '', bands = '', bars = '', values = '', xlab = '';
+    for (let v = 0; v <= max; v += 5) {
+      grid += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="#e5e7eb" stroke-width="1"/>`
+            + `<text x="${padL - 8}" y="${y(v) + 4}" font-size="11" text-anchor="end" fill="#4b5563">${v}</text>`;
+    }
+    periods.forEach(p => {
+      const x = padL + p.i1 * cw, w = (p.i2 - p.i1 + 1) * cw;
+      bands += `<rect x="${x}" y="${padT}" width="${w}" height="${base - padT}" fill="#fbf0d9"/>`
+             + `<text x="${x + w / 2}" y="${padT - 8}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#8a5a00">${w > 150 ? "Fee-for-service billable" : "FFS billable"}${w > 120 ? ` · ${p.n} night${p.n === 1 ? '' : 's'}` : ''}</text>`;
+    });
     days.forEach((d, i) => {
-      const o = by[d], x = padL + i * cw;
-      if (o?.bill) bands += `<rect x="${x}" y="${padT}" width="${cw}" height="${H - padT - padB}" fill="#f9eeda"/>`;
+      const o = by[d], x = padL + i * cw, bw = Math.max(cw - 3, 2);
       if (o) {
-        const hr = y(0) - y(o.res), hf = y(0) - y(o.ffs);
-        bars += `<rect x="${x + 1.5}" y="${y(o.res)}" width="${cw - 3}" height="${hr}" fill="#1e3a5f"><title>${this.formatDate(d)}: ${o.res} in reserved beds, ${o.ffs} in fee-for-service beds${o.bill ? `, ${o.bill} billable` : ''}</title></rect>`;
-        if (o.ffs) bars += `<rect x="${x + 1.5}" y="${y(o.res + o.ffs)}" width="${cw - 3}" height="${hf}" fill="${o.bill ? '#c8932b' : '#d9c7a0'}"><title>${this.formatDate(d)}: ${o.ffs} in fee-for-service beds, ${o.bill} billable</title></rect>`;
+        const tot = o.res + o.ffs;
+        bars += `<rect x="${x + 1.5}" y="${y(o.res)}" width="${bw}" height="${base - y(o.res)}" fill="#1e3a5f"><title>${short(d)}: ${tot} housed · ${o.res} in reserved beds, ${o.ffs} in fee-for-service beds${o.bill ? ` · ${o.bill} billable` : ''}</title></rect>`;
+        if (o.ffs) bars += `<rect x="${x + 1.5}" y="${y(tot)}" width="${bw}" height="${y(o.res) - y(tot)}" fill="${o.bill ? '#c8932b' : '#d9c7a0'}"><title>${short(d)}: ${o.ffs} in fee-for-service beds, ${o.bill} billable</title></rect>`;
+        if (tot) values += `<text x="${x + cw / 2}" y="${y(tot) - 4}" font-size="${cw < 20 ? 8.5 : 9.5}" text-anchor="middle" fill="#374151">${tot}</text>`;
       } else if (d > today) {
-        bars += `<rect x="${x + 1.5}" y="${y(0) - 2}" width="${cw - 3}" height="2" fill="#e5e7eb"/>`;
+        bars += `<rect x="${x + 1.5}" y="${base - 2}" width="${bw}" height="2" fill="#e5e7eb"/>`;
       }
       const dn = Number(d.slice(8));
-      if (dn === 1 || dn % 5 === 0) labels += `<text x="${x + cw / 2}" y="${H - 6}" font-size="10" text-anchor="middle" fill="#6b7280">${dn}</text>`;
+      if (dn === 1 || dn % 5 === 0 || i === days.length - 1)
+        xlab += `<text x="${x + cw / 2}" y="${base + 15}" font-size="11" text-anchor="middle" fill="#4b5563">${dn}</text>`;
     });
-    const line = `<line x1="${padL}" x2="${W - 4}" y1="${y(reserved)}" y2="${y(reserved)}" stroke="#b91c1c" stroke-dasharray="4 3" stroke-width="1.5"/><rect x="${padL + 2}" y="${y(reserved) - 15}" width="92" height="13" fill="#fff" opacity="0.9"/><text x="${padL + 6}" y="${y(reserved) - 5}" font-size="10" fill="#b91c1c">${reserved} reserved beds</text>`;
-    const axis = [0, 5, 10, 15].filter(v => v <= max).map(v => `<text x="${padL - 6}" y="${y(v) + 3}" font-size="10" text-anchor="end" fill="#6b7280">${v}</text>`).join('');
-    // Periods when fee-for-service applied.
-    const periods = []; let cur = null;
-    days.forEach(d => { const b = by[d]?.bill || 0; if (b) { if (cur && cur.last === prev(d)) { cur.last = d; cur.n += b; } else { cur = { first: d, last: d, n: b }; periods.push(cur); } } });
-    function prev(d){ const t = new Date(d + 'T12:00:00'); t.setDate(t.getDate() - 1); return App.isoDate(t); }
-    const short = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const totalBill = periods.reduce((s, p) => s + p.n, 0);
-    const summary = periods.length
-      ? `Fee-for-service applied ${periods.map(p => p.first === p.last ? short(p.first) : `${short(p.first)}–${short(p.last)}`).join(', ')} · <strong>${totalBill} billable night${totalBill === 1 ? '' : 's'}</strong> · ${this.fiscalMoney ? this.fiscalMoney(totalBill * rate) : '$' + totalBill * rate}`
-      : `The census stayed at or below ${reserved} all month, so no fee-for-service nights are billable.`;
+    const line = `<line x1="${padL}" x2="${W - padR}" y1="${y(reserved)}" y2="${y(reserved)}" stroke="#b91c1c" stroke-dasharray="5 3" stroke-width="1.5"/>`
+      + `<rect x="${padL + 4}" y="${y(reserved) - 16}" width="150" height="14" fill="#fff" opacity="0.92"/>`
+      + `<text x="${padL + 8}" y="${y(reserved) - 5}" font-size="10.5" font-weight="700" fill="#b91c1c">Reserved capacity: ${reserved} beds</text>`;
+    const axes = `<line x1="${padL}" x2="${W - padR}" y1="${base}" y2="${base}" stroke="#9ca3af"/>`
+      + `<text x="${padL + (W - padL - padR) / 2}" y="${H - 6}" font-size="11.5" text-anchor="middle" fill="#374151">Day of ${monthName}</text>`
+      + `<text transform="translate(13 ${padT + (base - padT) / 2}) rotate(-90)" font-size="11.5" text-anchor="middle" fill="#374151">People housed per night</text>`;
+    const svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Daily census for ${monthName}: people housed each night, split by reserved and fee-for-service beds" style="max-width:100%;height:auto;display:block">${grid}${bands}${axes}${bars}${line}${values}${xlab}</svg>`;
+
+    // SVG swatches print even when the browser drops background colours.
+    const sw = c => `<svg width="11" height="11" style="margin-right:5px;vertical-align:-1px" aria-hidden="true"><rect width="11" height="11" rx="2" fill="${c}" stroke="${c === '#fbf0d9' ? '#e8d3a6' : c}"/></svg>`;
     const counted = days.filter(d => by[d]).length;
-    return `<div class="card" id="mr-census-chart"><div class="card-header"><div><h2 class="card-title">Daily census and fee-for-service</h2>
-        <div class="field-hint">People housed each night. Fee-for-service is billable only on nights above the ${reserved} reserved beds (shaded).</div></div></div>
+    const legend = `<div class="census-legend">
+        <span>${sw('#1e3a5f')}In reserved beds (City advance)</span>
+        <span>${sw('#c8932b')}In fee-for-service beds, billable</span>
+        <span>${sw('#d9c7a0')}In fee-for-service beds, not billable</span>
+        <span>${sw('#fbf0d9')}Nights fee-for-service was billable</span>
+        <span><span style="display:inline-block;width:16px;border-top:2px dashed #b91c1c;margin-right:5px;vertical-align:3px"></span>Reserved capacity (${reserved})</span>
+      </div>
+      <div class="census-foot">Numbers above the bars are the total housed that night. ${counted} of ${days.length} nights counted${days.some(d => d > today) ? ' so far' : ''}.</div>`;
+    const summary = periods.length
+      ? `Fee-for-service billable ${periods.map(p => p.first === p.last ? short(p.first) : `${short(p.first)}–${short(p.last)}`).join(', ')} · <strong>${totalBill} billable night${totalBill === 1 ? '' : 's'}</strong> · ${this.fiscalMoney ? this.fiscalMoney(totalBill * rate) : '$' + totalBill * rate} at $${rate} per night`
+      : `The census stayed at or below ${reserved} all month, so no fee-for-service nights are billable.`;
+    return { svg, legend, summary, periods, reserved };
+  };
+
+  App.loadCensusRows = async function(month){
+    const end = this.monthEnd ? this.monthEnd(month) : month;
+    const { data, error } = await this.sb.from('holloway_bed_nights')
+      .select('service_date,designation,occupied,absent,billable')
+      .eq('program_id', this.program.id).gte('service_date', month).lte('service_date', end);
+    if (!error) (this._censusRows ||= {})[month] = data || [];
+    return error ? null : data || [];
+  };
+
+  // Printing from anywhere still gets the chart: load the month's nights first.
+  const basePrintMonthlyForChart = App.printMonthly;
+  App.printMonthly = async function(month = this.monthlyMonth()){
+    if (month && this.programHas?.('has_beds') && !this._censusRows?.[month]) await this.loadCensusRows(month);
+    return basePrintMonthlyForChart.call(this, month);
+  };
+
+  const censusCss = document.createElement('style');
+  censusCss.textContent = `
+    .census-legend { display:flex; gap:6px 18px; flex-wrap:wrap; margin-top:10px; font-size:12px; color:#374151; }
+    .census-foot { margin-top:6px; font-size:11.5px; color:#6b7280; }
+    .census-print { break-inside:avoid; page-break-inside:avoid; margin:10px 0 14px; }
+    .census-print .census-legend { font-size:9.5pt; }
+    .census-print .census-foot { font-size:9pt; }`;
+  document.head.appendChild(censusCss);
+
+  App.censusChartHtml = function(month, rows){
+    const c = this.censusChartParts(month, rows);
+    return `<div class="card" id="mr-census-chart"><div class="card-header"><div><h2 class="card-title">Daily Census: People Housed Each Night</h2>
+        <div class="field-hint">Each bar is one night. Fee-for-service is billable only on nights when more than ${c.reserved} people are housed (shaded).</div></div></div>
       <div class="card-body">
-        <div class="notice ${periods.length ? 'amber' : 'navy'}" style="margin-bottom:12px"><div>${periods.length ? '$' : 'i'}</div><div>${summary}</div></div>
-        <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Daily census chart" style="max-width:100%;height:auto">${bands}${axis}${bars}${line}${labels}</svg>
-        <div class="field-hint" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px">
-          <span><span style="display:inline-block;width:10px;height:10px;background:#1e3a5f;margin-right:4px"></span>Reserved beds</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#c8932b;margin-right:4px"></span>Fee-for-service, billable</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#d9c7a0;margin-right:4px"></span>Fee-for-service, not billable</span>
-          <span>${counted} of ${days.length} days counted${days.some(d => d > today) ? ' so far' : ''}</span>
-        </div>
+        <div class="notice ${c.periods.length ? 'amber' : 'navy'}" style="margin-bottom:12px"><div>${c.periods.length ? '$' : 'i'}</div><div>${c.summary}</div></div>
+        ${c.svg}${c.legend}
       </div></div>`;
+  };
+
+  // The printed report uses the nights the screen last loaded for that month.
+  App.censusChartPrintHtml = function(month){
+    const rows = this._censusRows?.[month];
+    if (!rows) return '';
+    const c = this.censusChartParts(month, rows);
+    return `<div class="census-print"><h3>Daily census: people housed each night</h3>
+      <p class="print-note">${c.summary}</p>${c.svg}${c.legend}</div>`;
   };
   /* Bed Night Invoice: load the invoice month's billable nights itself.
      The detail used to read whatever month the Bed Board had loaded
@@ -20564,7 +20808,16 @@ const App = {
   // the wrappers below is running, its title wins.
   const previousPrintAs = App.printAs;
   App.printAs = function(name){ return previousPrintAs.call(this, this._printTitle || name); };
-  const titled = (title, fn) => { App._printTitle = title; try { return fn(); } finally { App._printTitle = null; } };
+  const titled = (title, fn) => {
+    App._printTitle = title;
+    let out;
+    try { out = fn(); }
+    catch (e) { App._printTitle = null; throw e; }
+    // Some print paths load data first; keep the title until they finish.
+    if (out && typeof out.then === 'function') return out.finally(() => { App._printTitle = null; });
+    App._printTitle = null;
+    return out;
+  };
   const monthName = m => new Date(String(m).slice(0,10) + 'T00:00:00').toLocaleDateString('en-US', { month:'long', year:'numeric' });
 
   const previousPrintReport = App.printReport;
