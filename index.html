@@ -20456,9 +20456,11 @@ const App = {
 
   // Printing from anywhere still gets the chart: load the month's nights first.
   const basePrintMonthlyForChart = App.printMonthly;
-  App.printMonthly = async function(month = this.monthlyMonth()){
-    if (month && this.programHas?.('has_beds') && !this._censusRows?.[month]) await this.loadCensusRows(month);
-    return basePrintMonthlyForChart.call(this, month);
+  App.printMonthly = function(month = this.monthlyMonth()){
+    // Synchronous when the nights are already loaded or an archive is capturing
+    // (the archive preloads them); otherwise load first, then print.
+    if (this._capturing || !month || !this.programHas?.('has_beds') || this._censusRows?.[month]) return basePrintMonthlyForChart.call(this, month);
+    return this.loadCensusRows(month).then(() => basePrintMonthlyForChart.call(this, month));
   };
 
   const censusCss = document.createElement('style');
@@ -21201,6 +21203,187 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
   document.head.appendChild(css);
 })();
 
+
+(function(){
+  /* ==========================================================================
+     Programs that report monthly only (has_quarterly_report = false, e.g.
+     Glendale): Holloway-era quarterly screens become monthly.
+
+       Services     month picker instead of Q1–Q4
+       Exits        months instead of quarters in the period filter
+       Clients      bed shown in place of the free-text room; wording
+       Client form  Income Readings section dropped (Income at Exit kept)
+       Review Queue Quarterly Bundles panel dropped
+       Archive      contract year only; no CDBG or quarterly-report wording
+       Dashboard    Holloway's quarterly goal list dropped (fiscal users)
+
+     Holloway, which reports quarterly, is untouched.
+     ========================================================================== */
+
+  const esc = s => App.escape(s ?? '');
+  const monthlyOnly = () => !!(App.hasQuarterlyReport && !App.hasQuarterlyReport());
+  const isMonthKey = k => /^\d{4}-\d{2}-01$/.test(String(k || ''));
+  const monthEnd = m => { const d = new Date(m + 'T12:00:00'); return App.isoDate(new Date(d.getFullYear(), d.getMonth() + 1, 0)); };
+  const monthLabel = m => new Date(m + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const thisMonth = () => (App.localDate() || '').slice(0, 7) + '-01';
+
+  // Swap words in rendered text without touching inputs or attributes.
+  const reword = (root, pairs) => {
+    if (!root) return;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = []; while (w.nextNode()) nodes.push(w.currentNode);
+    nodes.forEach(n => { let v = n.nodeValue; pairs.forEach(([a, b]) => { v = v.split(a).join(b); }); if (v !== n.nodeValue) n.nodeValue = v; });
+  };
+
+  // While a monthly screen renders, the quarter range is the chosen month.
+  const baseQRange = App.qRange;
+  App.qRange = function(q = this.currentQuarter){
+    if (this._monthScope) return { start: this._monthScope, end: monthEnd(this._monthScope), label: monthLabel(this._monthScope) };
+    return baseQRange.call(this, q);
+  };
+  const withMonth = (month, fn) => { App._monthScope = month; try { return fn(); } finally { App._monthScope = null; } };
+
+  const monthSelectHtml = (id, value, extra = []) => {
+    const opts = [...extra, ...(App.monthlyMonths?.() || []).map(m => [m.value, m.label])];
+    return `<select id="${id}" class="field-select" style="max-width:220px">${opts.map(([v, l]) =>
+      `<option value="${esc(v)}" ${v === value ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+  };
+
+  /* ----------------------------------------------------------- services */
+  const baseRenderServices = App.renderServices;
+  App.renderServices = function(){
+    if (!monthlyOnly()) return baseRenderServices.apply(this, arguments);
+    const months = (this.monthlyMonths?.() || []).map(m => m.value);
+    if (!this._svcMonth || !months.includes(this._svcMonth)) this._svcMonth = months.includes(thisMonth()) ? thisMonth() : (months[0] || thisMonth());
+    const out = withMonth(this._svcMonth, () => baseRenderServices.apply(this, arguments));
+    const el = document.getElementById('view-services');
+    const qs = el?.querySelector('.quarter-selector');
+    if (qs) {
+      qs.innerHTML = `<span class="quarter-selector-label">Month</span>${monthSelectHtml('svc-month', this._svcMonth)}`;
+      qs.querySelector('#svc-month').addEventListener('change', e => { this._svcMonth = e.target.value; this.renderServices(); });
+    }
+    reword(el, [['this quarter', 'this month'], ['This quarter', 'This month'], ['this Quarter', 'this month'], ['for this quarter', 'for this month']]);
+    return out;
+  };
+
+  /* -------------------------------------------------------------- exits */
+  const baseExitsInScope = App.exitsInScope;
+  App.exitsInScope = function(scope){
+    if (isMonthKey(scope)) {
+      const end = monthEnd(scope);
+      return (this.data.clients || []).filter(c => c.exit_date && this.dateOnly(c.exit_date) >= scope && this.dateOnly(c.exit_date) <= end);
+    }
+    return baseExitsInScope.call(this, scope);
+  };
+  const baseRenderExits = App.renderClientExits;
+  App.renderClientExits = function(){
+    if (monthlyOnly() && this._exitsFilter && /^Q\d$/.test(this._exitsFilter.scope || '')) this._exitsFilter.scope = 'ytd';
+    const out = baseRenderExits.apply(this, arguments);
+    if (!monthlyOnly()) return out;
+    const el = document.getElementById('view-client-exits');
+    const sel = el?.querySelector('#exit-scope');
+    const f = this._exitsFilter || {};
+    if (sel) sel.innerHTML = [['ytd', 'Year to date'], ...(this.monthlyMonths?.() || []).map(m => [m.value, m.label])]
+      .map(([v, l]) => `<option value="${esc(v)}" ${f.scope === v ? 'selected' : ''}>${esc(l)}</option>`).join('');
+    const sub = el?.querySelector('.page-subtitle');
+    if (sub && isMonthKey(f.scope)) sub.textContent = sub.textContent.replace(/in \S+$/, 'in ' + monthLabel(f.scope));
+    reword(el, [['so quarterly counts are not double-reported', 'so monthly counts are not double-reported']]);
+    return out;
+  };
+
+  /* ------------------------------------------------------------ clients */
+  const baseRenderClients = App.renderClients;
+  App.renderClients = function(){
+    if (monthlyOnly() && this.programHas?.('has_beds')) {
+      // The bed is the assignment; show it where the free-text room was.
+      (this.data.clients || []).forEach(c => { const bed = this.bedLabelFor?.(c.id); if (bed) c.room_assignment = bed; });
+    }
+    const out = baseRenderClients.apply(this, arguments);
+    if (!monthlyOnly()) return out;
+    const el = document.getElementById('view-clients');
+    reword(el, [['Client records feed quarterly reporting.', 'Client records feed the monthly report.'],
+                ['so quarterly counts are not double-reported', 'so monthly counts are not double-reported'],
+                ['Room / Bed', 'Bed'], ['Duplicate room/bed assignments', 'Duplicate bed assignments']]);
+    return out;
+  };
+
+  /* -------------------------------------------------------- client form */
+  const baseIncomePanel = App.incomePanelHtml;
+  App.incomePanelHtml = function(){ return monthlyOnly() ? '' : baseIncomePanel.apply(this, arguments); };
+
+  /* ------------------------------------------------------- review queue */
+  const baseAdminReview = App.renderAdminReview;
+  App.renderAdminReview = function(){
+    const out = baseAdminReview.apply(this, arguments);
+    if (!monthlyOnly()) return out;
+    const el = document.getElementById('view-admin-review');
+    const card = [...(el?.querySelectorAll('.card') || [])].find(c => (c.querySelector('.card-title')?.textContent || '').trim() === 'Quarterly Bundles');
+    if (card) card.style.display = 'none';
+    const sub = el?.querySelector('.page-subtitle');
+    if (sub) sub.textContent = 'AI-assisted review of case notes and incidents. Monthly reports are reviewed on the Monthly Report screen.';
+    return out;
+  };
+
+  /* ------------------------------------------------------------ archive */
+  const baseRenderArchive = App.renderArchive;
+  App.renderArchive = function(){
+    if (monthlyOnly()) this.archiveBasis = 'contract';   // the fiscal year is the contract year here
+    const out = baseRenderArchive.apply(this, arguments);
+    if (!monthlyOnly()) return out;
+    const el = document.getElementById('view-archive');
+    el?.querySelector('#archive-basis')?.closest('label')?.style.setProperty('display', 'none');
+    reword(el, [
+      ['Program reports run Oct–Sep; invoices, budget, payments and CDBG run Jul–Jun. Choose which year the archive follows.', 'Reports, expense reports, budget and advances all follow the contract year (Oct–Sep).'],
+      ['Only quarters and months that have started are included.', 'Only months that have started are included.'],
+      [' · quarterly reports', ''], [' · CDBG and bed-night invoices', ' · bed night invoices'],
+      ['Invoice, CDBG and budget-modification files', 'Expense report and budget-modification files'],
+      ['Monthly invoices · ', 'Monthly expense reports · ']]);
+    return out;
+  };
+
+  // The archive captures each monthly report synchronously, so load every
+  // month's bed nights (for the census chart) before it starts.
+  const baseBuildArchive = App.buildArchive;
+  App.buildArchive = async function(...args){
+    if (this.programHas?.('has_beds') && this.loadCensusRows) {
+      for (const m of (this.monthlyMonths?.() || [])) if (!this._censusRows?.[m.value]) await this.loadCensusRows(m.value);
+    }
+    return baseBuildArchive.apply(this, args);
+  };
+  const baseCapture = App.archiveCapture;
+  App.archiveCapture = function(fn){ this._capturing = true; try { return baseCapture.call(this, fn); } finally { this._capturing = false; } };
+
+  /* ----------------------------------------------------------- dashboard */
+  const baseRenderDashboard = App.renderDashboard;
+  App.renderDashboard = function(){
+    const out = baseRenderDashboard.apply(this, arguments);
+    if (!monthlyOnly()) return out;
+    const el = document.getElementById('view-dashboard');
+    // Holloway's quarterly goal list (fiscal users' dashboard). The program's
+    // own Annual Contract Goals card is unaffected.
+    const head = [...(el?.querySelectorAll('.dashboard-section-head') || [])].find(h => /Contract Goals & Progress/.test(h.textContent));
+    if (head) { const next = head.nextElementSibling; head.remove(); if (next && !next.classList.contains('dashboard-section-head')) next.remove(); }
+    reword(el, [['Services and income are current quarter.', '']]);
+    return out;
+  };
+})();
+
+
+(function(){
+  /* CDBG is a Holloway funding source. Programs on the City-advance model
+     (Glendale) have no CDBG, so the screen is never offered there. */
+  const noCdbg = () => App.program?.fiscal_model === 'advance';
+  const baseNav = App.cdbgRefreshNav;
+  App.cdbgRefreshNav = async function(){
+    if (noCdbg()) { const nav = document.getElementById('nav-cdbg'); if (nav) nav.style.display = 'none'; return; }
+    return baseNav.apply(this, arguments);
+  };
+  const baseShow = App.showView;
+  App.showView = function(view, ...rest){
+    if (view === 'cdbg' && noCdbg()) view = 'dashboard';
+    return baseShow.call(this, view, ...rest);
+  };
+})();
 
 document.addEventListener('DOMContentLoaded', () => App.init());
 </script>
