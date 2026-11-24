@@ -19387,6 +19387,10 @@ const App = {
         : inside ? `<strong>&#10003; Inside West Hollywood city limits.</strong> <span class="field-hint">${esc(state.location_source || '')}</span>`
         : inside === false ? `<strong>&#10007; Outside West Hollywood city limits.</strong>`
         : 'The City boundary didn’t load. Try again shortly.';
+      // The City street list, as a second check under the map's verdict.
+      let sl = document.getElementById(`${prefix}-loc-streetlist`);
+      if (!sl && status.isConnected) { status.insertAdjacentHTML('afterend', `<div id="${prefix}-loc-streetlist"></div>`); sl = document.getElementById(`${prefix}-loc-streetlist`); }
+      if (sl) sl.innerHTML = this.streetListLineHtml?.(text.value || state.location_description, inside) || '';
       onChange && onChange(state);
     };
     let L = null, map = null, marker = null;
@@ -19402,7 +19406,9 @@ const App = {
       }
       show();
     };
-    text.addEventListener('input', () => { state.location_description = String(text.value).trim() || null; onChange && onChange(state); });
+    let slTimer = null;
+    text.addEventListener('input', () => { state.location_description = String(text.value).trim() || null;
+      clearTimeout(slTimer); slTimer = setTimeout(show, 250); });
     const find = async () => {
       const q = String(text.value || '').trim();
       if (!q) { status.className = 'weho-loc-status bad'; status.textContent = 'Type an address or intersection first.'; return; }
@@ -19635,7 +19641,8 @@ const App = {
       community_member_name: name, date_of_birth: vals.date_of_birth, member_contact_info: v('logref-contact'),
       requested_gender_category: v('logref-gender'),
       weho_affiliation: 'verified', weho_affiliation_date: this.localDate(),
-      weho_affiliation_method: 'Location mapped inside City limits' + (loc.location_description ? ': ' + loc.location_description : ''),
+      weho_affiliation_method: 'Location mapped inside City limits' + (loc.location_description ? ': ' + loc.location_description : '')
+        + (this.streetListSummary?.(loc.location_description) ? ' · Street list: ' + this.streetListSummary(loc.location_description).text.replace(/<[^>]+>/g, '') : ''),
       crit_id_18_or_older: !!crits.crit_id_18_or_older, criteria_responses: crits,
       location_description: loc.location_description, location_lat: loc.location_lat, location_lng: loc.location_lng,
       location_source: loc.location_source,
@@ -19658,6 +19665,7 @@ const App = {
       const where = r.location_lat != null ? `<a href="https://www.openstreetmap.org/?mlat=${r.location_lat}&mlon=${r.location_lng}#map=18/${r.location_lat}/${r.location_lng}" target="_blank" rel="noopener">map</a>` : '';
       html += `<div class="field-hint" style="margin-top:4px">Spends most time at: <strong>${esc(r.location_description || 'pinned location')}</strong>
         ${r.location_in_weho === true ? ' · <span style="color:#1E8449">&#10003; inside City limits</span>' : r.location_in_weho === false ? ' · <span style="color:#B3261E">outside City limits</span>' : ''} ${where ? '· ' + where : ''}</div>`;
+      html += this.streetListLineHtml?.(r.location_description, r.location_in_weho) || '';
     }
     if (r.eligibility_certified) html += `<div class="field-hint">Certified true and accurate by <strong>${esc(r.eligibility_certified_by || '—')}</strong>${r.eligibility_certified_at ? ' on ' + esc(this.formatDate(this.dateOnly(r.eligibility_certified_at))) : ''}.</div>`;
     return html;
@@ -19675,6 +19683,7 @@ const App = {
                  : r.location_in_weho === false ? ' · <span style="color:#B3261E">outside City limits</span>' : '';
     const html = `<div class="form-section"><div class="form-section-title">Location</div>
       <div style="font-size:13px">Spends most time at: <strong>${esc(r.location_description || 'pinned location')}</strong>${inside}${link}</div>
+      ${this.streetListLineHtml?.(r.location_description, r.location_in_weho) || ''}
       ${r.eligibility_certified ? `<div class="field-hint" style="margin-top:4px">Certified true and accurate by <strong>${esc(r.eligibility_certified_by || '—')}</strong>${r.eligibility_certified_at ? ' on ' + esc(this.formatDate(this.dateOnly(r.eligibility_certified_at))) : ''}.</div>` : ''}</div>`;
     const community = [...body.querySelectorAll('.form-section')].find(s => /Community Member/.test(s.querySelector('.form-section-title')?.textContent || ''));
     community ? community.insertAdjacentHTML('afterend', html) : body.insertAdjacentHTML('afterbegin', html);
@@ -20664,6 +20673,258 @@ const App = {
   style.id = 'export-polish-css';
   style.textContent = css;
   document.head.appendChild(style);
+})();
+
+
+(function(){
+  /* ==========================================================================
+     City of West Hollywood Street Address List (last updated 10/29/14),
+     checked alongside the map boundary on every referral location.
+
+     Each line:  Street | ranges separated by ";"
+       a-b      every address in the range
+       O / E    odd or even addresses only
+       partial  the address has parts in West Hollywood and a neighboring city
+       la       the address is entirely in the City of Los Angeles
+       none     no West Hollywood addresses (whole street, or that block)
+
+     The boundary stays the eligibility test the database enforces. The list is
+     a second opinion. It catches a pin dropped on the wrong side of a border
+     street, and it names the cases the City should confirm by hand.
+     ========================================================================== */
+
+  const LIST_DATE = '10/29/14';
+  const RAW = `
+N. Alfred St|501-599 O;1011-1020
+N. Almont Dr.|145-646
+Alta Loma Rd.|1100-1299
+Ashcroft Ave.|8700-9050
+Betty Way|8800-8839
+Beverly Blvd.|8601-8699 O;8700 partial;8701-8749 O;8750-9049
+Beverly Pl.|8511-8599 O
+Bonner Dr.|8700-8799
+Carol Dr.|1000-1099
+N. Clark Dr.|141-159
+N. Clark St.|1100-1217
+Clinton Ave.|8300-8499
+Cory Ave.|1000-1099
+N. Crescent Heights Blvd.|1005-1425
+N. Croft Ave.|500-599 E;600-650;1031-1039
+N. Curson Ave.|900-1299
+Cynthia St.|8800-9049
+De Longpre Ave.|8200-8499
+N. Detroit St.|1100-1299
+Dicks St.|8928-9099
+N. Doheny Dr.|144-940 E;940-1111
+Doheny Rd.|9200-9300;9301-9337 O
+Dorrington Ave.|8700-9050
+Edinburgh Ave.|1006-1099
+Elevado Ave.|8995-9099
+El Tovar Pl.|8750-8799
+N. Fairfax Ave.|900-1300;1301-1449 O
+N. Flores St.|500-635;636 partial;637 partial;1100-1399
+N. Formosa Ave.|1000-1299
+Fountain Ave.|7070-7899 E;7900-8499
+N. Fuller Ave.|1000-1299
+N. Gardner St.|900-1299
+N. Genesee Ave.|900-1299
+Greenacre Ave.|1100-1237
+Hacienda Pl.|1100-1199
+Hammond St.|847-1099
+Hampton Ave.|7200-7749
+Hancock Ave.|900-1099
+Harland Ave.|9040-9099
+N. Harper Ave.|900-1499
+Harratt St.|8800-9099
+Havenhurst Dr.|900-1435
+N. Hayworth Ave.|900-999 E;1000-1450
+Hilldale Ave.|800-1112
+Holloway Dr.|8450-8799
+Holloway Plaza Dr.|8589-8720
+Horn Ave.|1100-1230
+Huntley Dr.|300-899
+Keith Ave.|8921-9099
+N. Kings Rd.|500-636;800-1399
+N. La Brea Ave.|1000-1299
+N. La Cienega Blvd.|500-637;980-1235
+La Collina Dr.|1107 partial;1114 partial;1111 la
+N. La Jolla Ave.|900-1099
+N. La Peer Dr.|142-159;600-699
+Larrabee St.|800-1300
+N. Laurel Ave.|1006-1430
+Lexington Ave.|7065-7749
+Lloyd Pl.|8950-9058
+Londonderry Pl.|none
+N. Martel Ave.|1009-1099
+Melrose Ave.|8410 partial;8412;8414 la;8435-9099
+Miller Dr.|1320 partial
+Nellas St.|none
+Nemo St.|9041-9099
+Norma Pl.|8950-9099
+Norton Ave.|7500-8299
+Norwich Dr.|400-599
+N. Ogden Dr.|900-1299
+Olive Dr.|1100-1399
+N. Orange Grove Ave.|900-1299
+N. Orlando Ave.|500-638;1051
+Ozeta Terrace|1248-1320 E
+Palm Ave.|800-1099
+Phyllis Ave.|9000-9099
+Phyllis St.|9101-9199 O
+N. Poinsettia Pl.|1000-1299
+Poinsettia Dr.|1100-1237
+Queens Rd.|none
+Ramage St.|700-799
+Rangely St.|none
+Rangely Ave.|8700-9050
+N. Robertson Blvd.|142-850
+Romaine St.|7100-7349 O;7452-7949;8116-8299
+Rosewood Ave.|8300-8419 O;8500-9099
+Roxbury Rd.|none
+Rugby Dr.|8550-8629
+Santa Monica Blvd.|7066-9099
+N. San Vicente Blvd.|310-1023
+N. Sherbourne Dr.|300-412;1100-1124
+Sherwood Dr.|8514-8799
+Shoreham Dr.|8700-8788
+Sierra Alta Way|1100-1111
+N. Sierra Bonita Ave.|900-1099
+N. Spaulding Ave.|900-1299
+N. Stanley Ave.|901-1099
+W. Sunset Blvd.|8222;8224 la;8225;8226 partial;8227-9255
+Sunset Hills Ave.|none
+Sunset Plaza Dr.|1219-1225
+N. Swall Dr.|141-159
+N. Sweetzer Ave.|500-635 O;637 partial;807-899 O;900-1422
+N. Sycamore Ave.|1011-1041 O partial
+N. Vista St.|1008 partial;1009 partial;1010-1299
+Vista Grande St.|8944-9049
+Waring Ave.|8319
+Westbourne Dr.|300-999
+Westmount Dr.|421-1099
+N. West Knoll Dr.|500-999
+W. West Knoll Dr.|8532-8749
+N. Wetherly Dr.|144-159;800-939;1100-1199 none
+Willey Ln.|700-750
+Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
+
+  const SUFFIX = { avenue:'ave', ave:'ave', av:'ave', boulevard:'blvd', blvd:'blvd', bl:'blvd', blv:'blvd',
+    street:'st', st:'st', str:'st', drive:'dr', dr:'dr', place:'pl', pl:'pl', road:'rd', rd:'rd',
+    lane:'ln', ln:'ln', terrace:'ter', ter:'ter', terr:'ter', way:'way', wy:'way' };
+  const DIRS = new Set(['n','north','s','south','e','east','w','west']);
+
+  // "N. La Cienega Blvd., Apt 4" -> { name:'la cienega', suffix:'blvd', full:'n la cienega' }
+  const parseStreet = text => {
+    const toks = String(text || '').toLowerCase().replace(/[.,#]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+    let cut = toks.findIndex((t, i) => i > 0 && SUFFIX[t]);
+    const suffix = cut > 0 ? SUFFIX[toks[cut]] : null;
+    const words = cut > 0 ? toks.slice(0, cut) : toks;
+    const stripped = words.length > 1 && DIRS.has(words[0]) ? words.slice(1) : words;
+    return { full: words.join(' '), name: stripped.join(' '), suffix };
+  };
+
+  const STREETS = RAW.trim().split('\n').map(line => {
+    const [label, spec] = line.split('|');
+    const p = parseStreet(label);
+    const ranges = spec.trim().toLowerCase() === 'none' ? [{ lo: 0, hi: Infinity, k: 'none' }]
+      : spec.split(';').map(s => {
+          const m = s.trim().match(/^(\d+)(?:-(\d+))?(?:\s+([OE]))?(?:\s+(partial|la|none))?$/);
+          if (!m) { console.warn('street list entry', label, s); return null; }
+          return { lo: +m[1], hi: +(m[2] || m[1]), parity: m[3] || null, k: m[4] || 'in' };
+        }).filter(Boolean);
+    return { label, name: p.name, full: p.full, suffix: p.suffix, ranges, spec: spec.trim() };
+  });
+
+  const findStreets = text => {
+    const p = parseStreet(text);
+    if (!p.name) return [];
+    const byName = n => STREETS.filter(s => (s.name === n || s.full === n) && (!p.suffix || s.suffix === p.suffix));
+    let hits = byName(p.full);
+    if (!hits.length && p.full !== p.name) hits = byName(p.name);
+    return hits;
+  };
+
+  const RANK = { in: 5, partial: 4, la: 2, none: 1, outside: 0 };
+  const judge = (street, n) => {
+    const fits = r => n >= r.lo && n <= r.hi && (!r.parity || (r.parity === 'O') === (n % 2 === 1));
+    // A single address named on its own outranks a range it sits inside.
+    const exact = street.ranges.find(r => r.lo === r.hi && r.lo === n);
+    if (exact) return exact.k;
+    const r = street.ranges.find(fits);
+    return r ? r.k : 'outside';
+  };
+  const rangeText = s => s.spec.replace(/;/g, ', ').replace(/\bO\b/g, '(odd)').replace(/\bE\b/g, '(even)')
+    .replace(/\bla\b/g, 'in L.A.').replace(/\bnone\b/gi, 'none');
+
+  // Returns null when the text holds nothing to check (e.g. a park or a pin).
+  App.streetListCheck = function(text){
+    let t = String(text || '').split(',')[0].trim();
+    if (!t) return null;
+    const parts = t.split(/\s*(?:&|\/|\band\b|\bat\b)\s*/i).filter(Boolean);
+    if (parts.length >= 2) {
+      const found = parts.map(s => ({ s: s.replace(/^\d+\s*/, ''), hit: findStreets(s.replace(/^\d+\s*/, ''))[0] }));
+      const listed = found.filter(f => f.hit && !f.hit.ranges.every(r => r.k === 'none'));
+      return { kind: 'intersection', result: listed.length === found.length ? 'streets_listed' : listed.length ? 'one_listed' : 'not_listed',
+               streets: found.map(f => ({ text: f.s, label: f.hit?.label || null })) };
+    }
+    const m = t.match(/^(\d+)(?:\s*[-–]\s*\d+)?[a-z]?\s+(.+)$/i);
+    const streetText = m ? m[2] : t;
+    const hits = findStreets(streetText);
+    if (!hits.length) return /\d/.test(t) || SUFFIX[String(streetText).toLowerCase().split(/\s+/).pop().replace('.', '')]
+      ? { kind: 'address', result: 'not_listed', number: m ? +m[1] : null, text: streetText } : null;
+    if (!m) {
+      const s = hits[0];
+      return { kind: 'street', result: s.ranges.every(r => r.k === 'none') ? 'none' : 'street_listed', street: s, ranges: rangeText(s) };
+    }
+    const n = +m[1];
+    const best = hits.map(s => ({ s, k: judge(s, n) })).sort((a, b) => RANK[b.k] - RANK[a.k])[0];
+    return { kind: 'address', result: best.k === 'in' ? 'in_weho' : best.k === 'la' ? 'in_la' : best.k,
+             number: n, street: best.s, ranges: rangeText(best.s) };
+  };
+
+  // tone: ok | warn | bad
+  App.streetListSummary = function(text){
+    const c = this.streetListCheck(text);
+    if (!c) return null;
+    const esc = s => this.escape(s ?? '');
+    const st = c.street ? esc(c.street.label.replace(/\.$/, '')) : '';
+    const ranges = c.ranges ? ` <span class="sl-ranges">West Hollywood addresses: ${esc(c.ranges)}</span>` : '';
+    switch (c.result) {
+      case 'in_weho':      return { tone:'ok',   text:`On the City street list: ${c.number} ${st}.`, ranges, c };
+      case 'partial':      return { tone:'warn', text:`${c.number} ${st} is split between West Hollywood and a neighboring city. Confirm with the City.`, ranges, c };
+      case 'in_la':        return { tone:'bad',  text:`The City street list places ${c.number} ${st} in the City of Los Angeles.`, ranges, c };
+      case 'none':         return { tone:'bad',  text: c.number != null ? `The City street list shows no West Hollywood addresses on that block of ${st}.` : `The City street list shows no West Hollywood addresses on ${st}.`, ranges:'', c };
+      case 'outside':      return { tone:'bad',  text:`${st} is a West Hollywood street, but ${c.number} is outside its West Hollywood range.`, ranges, c };
+      case 'street_listed':return { tone:'ok',   text:`${st} is on the City street list. Add a street number to check the exact address.`, ranges, c };
+      case 'streets_listed': return { tone:'ok', text:`Both cross streets are on the City street list (${c.streets.map(s => esc(s.label.replace(/\.$/, ''))).join(' & ')}). Border streets can still fall outside; the map decides.`, ranges:'', c };
+      case 'one_listed':   return { tone:'warn', text:`${c.streets.filter(s => s.label).map(s => esc(s.label.replace(/\.$/, ''))).join(', ')} is on the City street list; ${c.streets.filter(s => !s.label).map(s => esc(s.text)).join(', ')} is not. Check the map.`, ranges:'', c };
+      case 'not_listed':   return { tone: c.kind === 'intersection' ? 'warn' : 'bad', text: c.kind === 'intersection' ? 'Neither cross street is on the City street list.' : `${esc(c.text)} is not on the City street list.`, ranges:'', c };
+    }
+    return null;
+  };
+
+  // One line for screens: the list's verdict, and a flag when it and the map disagree.
+  App.streetListLineHtml = function(text, insideMap){
+    const s = this.streetListSummary(text);
+    if (!s) return '';
+    const listSaysIn = ['in_weho','street_listed','streets_listed'].includes(s.c.result);
+    const listSaysOut = ['in_la','outside','none','not_listed'].includes(s.c.result) && s.c.kind !== 'intersection';
+    const disagree = (insideMap === true && listSaysOut) || (insideMap === false && listSaysIn && s.c.kind === 'address');
+    const icon = s.tone === 'ok' ? '&#10003;' : s.tone === 'warn' ? '!' : '&#10007;';
+    return `<div class="sl-line sl-${disagree ? 'warn' : s.tone}"><span class="sl-icon">${icon}</span><span>${s.text}${s.ranges}
+      ${disagree ? `<strong class="sl-flag">The map and the street list disagree. Check the pin, or confirm with the City.</strong>` : ''}
+      <span class="sl-src">City Street Address List, updated ${LIST_DATE}</span></span></div>`;
+  };
+
+  const css = document.createElement('style');
+  css.textContent = `
+    .sl-line { display:flex; gap:8px; align-items:flex-start; margin-top:6px; padding:7px 10px; border-radius:6px; font-size:12.5px; line-height:1.45; }
+    .sl-line .sl-icon { font-weight:800; min-width:12px; }
+    .sl-line .sl-ranges, .sl-line .sl-src { display:block; color:#5b6472; font-size:11.5px; }
+    .sl-line .sl-flag { display:block; margin-top:2px; }
+    .sl-ok { background:#E8F5EC; color:#1E6B3A; } .sl-warn { background:#FFF4DD; color:#7A5200; } .sl-bad { background:#FDECEA; color:#8C1D18; }
+    .weho-loc-status + .sl-line { margin-top:6px; }`;
+  document.head.appendChild(css);
 })();
 
 
