@@ -20384,7 +20384,7 @@ const App = {
     const short = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const capacity = Math.max(15, reserved + 5);
     const max = Math.max(capacity, ...days.map(d => (by[d]?.res || 0) + (by[d]?.ffs || 0)));
-    const W = 760, H = 270, padL = 46, padR = 8, padT = 30, padB = 44, cw = (W - padL - padR) / days.length;
+    const W = 760, H = 270, padL = 46, padR = 74, padT = 30, padB = 44, cw = (W - padL - padR) / days.length;
     const y = v => padT + (H - padT - padB) * (1 - v / max);
     const base = y(0);
 
@@ -20403,7 +20403,7 @@ const App = {
     periods.forEach(p => {
       const x = padL + p.i1 * cw, w = (p.i2 - p.i1 + 1) * cw;
       bands += `<rect x="${x}" y="${padT}" width="${w}" height="${base - padT}" fill="#fbf0d9"/>`
-             + `<text x="${x + w / 2}" y="${padT - 8}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#8a5a00">${w > 150 ? "Fee-for-service billable" : "FFS billable"}${w > 120 ? ` · ${p.n} night${p.n === 1 ? '' : 's'}` : ''}</text>`;
+             + `<text x="${x + w / 2}" y="${padT - 8}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#8a5a00">${w > 90 ? `Fee-for-service billable · ${p.n} night${p.n === 1 ? '' : 's'}` : 'FFS'}</text>`;
     });
     days.forEach((d, i) => {
       const o = by[d], x = padL + i * cw, bw = Math.max(cw - 3, 2);
@@ -20420,8 +20420,9 @@ const App = {
         xlab += `<text x="${x + cw / 2}" y="${base + 15}" font-size="11" text-anchor="middle" fill="#4b5563">${dn}</text>`;
     });
     const line = `<line x1="${padL}" x2="${W - padR}" y1="${y(reserved)}" y2="${y(reserved)}" stroke="#b91c1c" stroke-dasharray="5 3" stroke-width="1.5"/>`
-      + `<rect x="${padL + 4}" y="${y(reserved) - 16}" width="150" height="14" fill="#fff" opacity="0.92"/>`
-      + `<text x="${padL + 8}" y="${y(reserved) - 5}" font-size="10.5" font-weight="700" fill="#b91c1c">Reserved capacity: ${reserved} beds</text>`;
+      // Labelled in the right margin, clear of the bars and their totals.
+      + `<text x="${W - padR + 6}" y="${y(reserved) - 2}" font-size="10.5" font-weight="700" fill="#b91c1c">Reserved</text>`
+      + `<text x="${W - padR + 6}" y="${y(reserved) + 11}" font-size="10.5" font-weight="700" fill="#b91c1c">capacity (${reserved})</text>`;
     const axes = `<line x1="${padL}" x2="${W - padR}" y1="${base}" y2="${base}" stroke="#9ca3af"/>`
       + `<text x="${padL + (W - padL - padR) / 2}" y="${H - 6}" font-size="11.5" text-anchor="middle" fill="#374151">Day of ${monthName}</text>`
       + `<text transform="translate(13 ${padT + (base - padT) / 2}) rotate(-90)" font-size="11.5" text-anchor="middle" fill="#374151">People housed per night</text>`;
@@ -20468,6 +20469,26 @@ const App = {
     .census-print .census-legend { font-size:9.5pt; }
     .census-print .census-foot { font-size:9pt; }`;
   document.head.appendChild(censusCss);
+
+  // The Bed Board's census card shows the same chart for its selected month,
+  // from the nights the board has already loaded.
+  const baseCensusSummaryForChart = App.censusSummaryHtml;
+  App.censusSummaryHtml = function(){
+    const html = baseCensusSummaryForChart.apply(this, arguments);
+    if (!this.programHas?.('has_beds') || !this.censusChartParts) return html;
+    const month = this.censusMonth(), end = this.monthEnd(month);
+    const desig = new Map((this.data.beds || []).map(b => [b.id, b.designation]));
+    const rows = (this.data.bedNights || []).filter(n => n.service_date >= month && n.service_date <= end)
+      .map(n => ({ ...n, designation: n.designation || desig.get(n.bed_id) }));
+    if (!rows.length) return html;
+    const c = this.censusChartParts(month, rows);
+    const chart = `<div id="bb-census-chart" style="margin-top:18px">
+        <div class="field-label" style="margin-bottom:6px">People housed each night</div>
+        <div class="notice ${c.periods.length ? 'amber' : 'navy'}" style="margin-bottom:10px"><div>${c.periods.length ? '$' : 'i'}</div><div>${c.summary}</div></div>
+        ${c.svg}${c.legend}</div>`;
+    const at = html.lastIndexOf('<p class="bed-msg" id="census-msg">');
+    return at < 0 ? html : html.slice(0, at) + chart + html.slice(at);
+  };
 
   App.censusChartHtml = function(month, rows){
     const c = this.censusChartParts(month, rows);
