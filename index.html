@@ -3461,6 +3461,9 @@ const App = {
       'Hotel / Motel': 'temporary_institutional',
       'Moved in with Family/Friends - No Lease': 'positive_non_permanent',
       'Moved in with Spouse/Partner - No Lease': 'positive_non_permanent',
+      'Shared Housing / Rented Room': 'positive_non_permanent',
+      'Relocation - Verified Safe and Stable Housing': 'positive_non_permanent',
+      'Other Stable Arrangement - City Approved': 'positive_non_permanent',
       'Returned to Homelessness': 'unstable_unknown',
       'Unknown / Left Program': 'unstable_unknown',
       'Deceased': 'deceased',
@@ -3502,6 +3505,9 @@ const App = {
     'Returned to Homelessness',
     'Moved in with Family/Friends - No Lease',
     'Moved in with Spouse/Partner - No Lease',
+    'Shared Housing / Rented Room',
+    'Relocation - Verified Safe and Stable Housing',
+    'Other Stable Arrangement - City Approved',
     'Unknown / Left Program',
     'Deceased',
     'Other Non-Permanent Exit'
@@ -6351,7 +6357,7 @@ const App = {
     const t=String(exitType||'').toLowerCase();
     if(!exitType) return {stability:null, days90:null, goal:null};
     if(this.isPermanentExit({exit_destination_type:exitType})) return {stability:'Stable', days90:'Yes', goal:'Yes'};
-    if(t.includes('family/friends') || t.includes('spouse/partner')) return {stability:'Potentially Stable', days90:'Unknown', goal:'Partially'};
+    if(t.includes('family/friends') || t.includes('spouse/partner') || this.exitDestinationCategory({exit_destination_type:exitType})==='positive_non_permanent') return {stability:'Potentially Stable', days90:'Unknown', goal:'Partially'};
     if(t.includes('temporary') || t.includes('shelter') || t.includes('institutional') || t.includes('hotel')) return {stability:'Temporary', days90:'No', goal:'No'};
     if(t.includes('homeless') || t.includes('unknown') || t.includes('left program')) return {stability:'Unstable', days90:'No', goal:'No'};
     return {stability:'Unknown', days90:'Unknown', goal:'Unknown'};
@@ -13628,7 +13634,7 @@ const App = {
         pct = target > 0 ? Math.min(100, Math.round((actual / target) * 100)) : null;
         sub = isRate
           ? (p.denominator != null ? `of ${p.denominator} follow-up${Number(p.denominator) === 1 ? '' : 's'} completed` : '')
-          : `${pct}% of the annual target`;
+          : `${pct}% of the annual target${p.note ? ' · ' + p.note : ''}`;
       }
 
       return `<div class="cg-row">
@@ -14470,7 +14476,7 @@ const App = {
   App.stableExitClients = function(){
     return (this.followUpClients ? this.followUpClients() : (this.data?.clients || [])).filter(c =>
       c.exit_date && !this.isPermanentExit(c)
-      && STABLE_EXIT_CLASSES.includes(c.exit_housing_stability || ''));
+      && (c.stable_exit_verified || STABLE_EXIT_CLASSES.includes(c.exit_housing_stability || '')));
   };
 
   // A ninety-day check counts towards the contract figure only if it says how
@@ -21384,6 +21390,263 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
     return baseShow.call(this, view, ...rest);
   };
 })();
+
+(function(){
+  /* ==========================================================================
+     Services tab: activity at a glance, above the contact list.
+
+     Tiles   Service contacts · Participants engaged · Contacts per participant
+             per week · Minutes (with average per contact) · Inactive participants
+             (active, no contact in the last 30 days) · On-site participation
+     Chart   Contacts by service type for the period, coloured by group.
+             Clicking a bar filters the list below to that type.
+
+     The period is the month picker for monthly programs (Glendale) and the
+     selected quarter elsewhere. Entry (one-click buttons, + Add Service) is
+     unchanged.
+     ========================================================================== */
+
+  const esc = s => App.escape(s ?? '');
+  const GROUP_COLOR = {
+    'Case Management & Housing': '#1e3a5f',
+    'Referrals & Health': '#2a7f8f',
+    'On-Site Participation': '#c8932b',
+    'Income & Benefits': '#3d7a4f',
+    'Support & Safety': '#6b5b95',
+    'Other': '#8a8f98'
+  };
+  const fmt1 = n => (Math.round(n * 10) / 10).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  App.servicesPeriod = function(){
+    const monthly = this.hasQuarterlyReport && !this.hasQuarterlyReport();
+    if (monthly && this._svcMonth) {
+      const m = this._svcMonth, d = new Date(m + 'T12:00:00');
+      const end = this.isoDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+      return { start: m, end, label: d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) };
+    }
+    const r = this.qRange(this.currentQuarter);
+    return { start: r.start, end: r.end, label: this.currentQuarter };
+  };
+
+  App.servicesActivity = function(){
+    const p = this.servicesPeriod();
+    const today = this.localDate();
+    const through = today < p.end ? today : p.end;
+    const inPeriod = s => { const d = this.dateOnly(s.service_date); return d && d >= p.start && d <= p.end; };
+    const all = this.data.clientServices || [];
+    const svc = all.filter(inPeriod);
+    const minutes = svc.reduce((t, s) => t + Number(s.duration_minutes || 0), 0);
+
+    // Participants in the program at any point in the period (to date).
+    const clients = this.data.clients || [];
+    const enrolled = clients.filter(c => this.clientOverlaps(c, p.start, through));
+    const days = Math.max(1, this.daysInclusive(p.start, through));
+    const weeks = days / 7;
+    const perWeek = enrolled.length ? svc.length / enrolled.length / weeks : null;
+
+    // Active today, in the program 30+ days or not, with no contact in 30 days.
+    const cutoff = (() => { const d = new Date(today + 'T12:00:00'); d.setDate(d.getDate() - 30); return this.isoDate(d); })();
+    const last = new Map();
+    all.forEach(s => { const d = this.dateOnly(s.service_date); if (d && d <= today && (!last.has(s.client_id) || d > last.get(s.client_id))) last.set(s.client_id, d); });
+    const active = clients.filter(c => this.clientStatus(c) !== 'Exited' && this.dateOnly(c.entry_date) && this.dateOnly(c.entry_date) <= today);
+    const inactive = active.filter(c => !last.get(c.id) || last.get(c.id) < cutoff)
+      .map(c => ({ c, last: last.get(c.id) || null }));
+
+    // By type, grouped and sorted.
+    const byType = new Map();
+    svc.forEach(s => {
+      const type = s.service_type || 'Other';
+      const r = byType.get(type) || { type, group: this.serviceTypeMeta(type)?.group || 'Other', n: 0, min: 0 };
+      r.n++; r.min += Number(s.duration_minutes || 0); byType.set(type, r);
+    });
+    const types = [...byType.values()].sort((a, b) => b.n - a.n || a.type.localeCompare(b.type));
+    return { p, through, svc, minutes, enrolled, days, weeks, perWeek, inactive, types };
+  };
+
+  App.servicesChartHtml = function(a){
+    if (!a.types.length) return `<div class="field-hint">No service contacts recorded for ${esc(a.p.label)}.</div>`;
+    const max = Math.max(...a.types.map(t => t.n));
+    const groups = [...new Set(a.types.map(t => t.group))];
+    const active = this._svcTypeFilter;
+    return `<div class="svc-bars" role="list">${a.types.map(t => {
+        const w = Math.max(2, Math.round(t.n / max * 100));
+        const on = !active || active === t.type;
+        return `<button type="button" class="svc-bar-row${active === t.type ? ' selected' : ''}" data-svc-type="${esc(t.type)}" role="listitem"
+            title="${esc(t.type)}: ${t.n} contact${t.n === 1 ? '' : 's'}, ${t.min} minutes. Click to filter the list." style="opacity:${on ? 1 : .45}">
+          <span class="svc-bar-label">${esc(t.type)}</span>
+          <span class="svc-bar-track"><span class="svc-bar-fill" style="width:${w}%;background:${GROUP_COLOR[t.group] || GROUP_COLOR.Other}"></span></span>
+          <span class="svc-bar-val"><strong>${t.n}</strong> · ${Math.round(t.min / 60 * 10) / 10} h</span>
+        </button>`; }).join('')}</div>
+      <div class="svc-legend">${groups.map(g => `<span><i style="background:${GROUP_COLOR[g] || GROUP_COLOR.Other}"></i>${esc(g)}</span>`).join('')}
+        <span class="svc-legend-note">Contacts · hours. Click a bar to filter the list.</span></div>`;
+  };
+
+  const tile = (label, value, sub, cls = '') =>
+    `<div class="generated-metric ${cls}"><div class="label">${label}</div><div class="value">${value}</div>${sub ? `<div class="field-hint">${sub}</div>` : ''}</div>`;
+
+  const baseRender = App.renderServices;
+  App.renderServices = function(){
+    const out = baseRender.apply(this, arguments);
+    const el = document.getElementById('view-services');
+    const grid = el?.querySelector('.generated-metric-grid');
+    if (!grid) return out;
+    const a = this.servicesActivity();
+    const admin = this.isAdmin();
+    const find = label => [...grid.querySelectorAll('.generated-metric')].find(m => m.querySelector('.label')?.textContent.trim() === label);
+
+    // Service Types is now the chart; the per-week and inactive figures take its place.
+    find('Service Types')?.remove();
+    const engaged = find('Clients Engaged');
+    if (engaged) {
+      engaged.querySelector('.label').textContent = 'Participants Engaged';
+      engaged.insertAdjacentHTML('beforeend', `<div class="field-hint">of ${a.enrolled.length} in the program this period</div>`);
+      engaged.insertAdjacentHTML('afterend', tile('Contacts per Participant per Week',
+        a.perWeek == null ? '—' : fmt1(a.perWeek),
+        `${a.svc.length} contacts · ${a.enrolled.length} participants · ${fmt1(a.weeks)} weeks of ${esc(a.p.label)}${a.through < a.p.end ? ' to date' : ''}`));
+    }
+    const mins = find('Minutes');
+    if (mins) mins.insertAdjacentHTML('beforeend', `<div class="field-hint">${a.svc.length ? `avg ${Math.round(a.minutes / a.svc.length)} min per contact` : 'no contacts'}</div>`);
+    const names = a.inactive.slice(0, 4).map(x => esc(admin ? this.clientDisplayId(x.c) : (this.clientName(x.c) || this.clientDisplayId(x.c)))).join(', ');
+    (mins || grid.lastElementChild)?.insertAdjacentHTML('afterend', tile('Inactive Participants', a.inactive.length,
+      a.inactive.length ? `No contact in 30+ days: ${names}${a.inactive.length > 4 ? ` +${a.inactive.length - 4} more` : ''}` : 'Every active participant had a contact in the last 30 days',
+      a.inactive.length ? 'svc-tile-warn' : ''));
+    grid.classList.add('svc-metric-grid');
+
+    // The chart, between the figures and the plans/list.
+    el.querySelector('#svc-activity')?.remove();
+    grid.insertAdjacentHTML('afterend', `<div class="card" id="svc-activity" style="margin-bottom:16px">
+      <div class="card-header"><div><h2 class="card-title">Services by Type</h2>
+        <div class="field-hint">${esc(a.p.label)}${a.through < a.p.end ? ' to date' : ''} · ${a.svc.length} contacts · ${Math.round(a.minutes / 60 * 10) / 10} hours</div></div>
+        ${this._svcTypeFilter ? `<button type="button" class="btn btn-ghost btn-sm" id="svc-filter-clear">Showing ${esc(this._svcTypeFilter)} only · Clear</button>` : ''}</div>
+      <div class="card-body">${this.servicesChartHtml(a)}</div></div>`);
+
+    const card = el.querySelector('#svc-activity');
+    card.querySelectorAll('[data-svc-type]').forEach(b => b.addEventListener('click', () => {
+      this._svcTypeFilter = this._svcTypeFilter === b.dataset.svcType ? null : b.dataset.svcType;
+      this.renderServices();
+    }));
+    card.querySelector('#svc-filter-clear')?.addEventListener('click', () => { this._svcTypeFilter = null; this.renderServices(); });
+
+    // Filter the contact list to the chosen type.
+    if (this._svcTypeFilter) {
+      const byId = new Map((this.data.clientServices || []).map(s => [String(s.id), s]));
+      el.querySelectorAll('tr [data-edit-service]').forEach(btn => {
+        const s = byId.get(String(btn.dataset.editService));
+        const tr = btn.closest('tr');
+        if (tr && s) tr.style.display = s.service_type === this._svcTypeFilter ? '' : 'none';
+      });
+    }
+    return out;
+  };
+
+  const css = document.createElement('style');
+  css.textContent = `
+    .svc-metric-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) !important; }
+    .svc-metric-grid .generated-metric .field-hint { margin-top:4px; line-height:1.35; }
+    .generated-metric.svc-tile-warn { border-left-color: var(--amber, #c27c0e); }
+    .svc-bars { display:grid; gap:6px; }
+    .svc-bar-row { display:grid; grid-template-columns: minmax(150px, 230px) 1fr 96px; align-items:center; gap:12px;
+      background:none; border:0; padding:3px 4px; border-radius:6px; cursor:pointer; text-align:left; font:inherit; color:inherit; }
+    .svc-bar-row:hover { background:#f5f4f0; }
+    .svc-bar-row.selected { background:#eef2fa; }
+    .svc-bar-label { font-size:13px; color:#1f2937; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .svc-bar-track { height:16px; background:#f1f0ec; border-radius:4px; overflow:hidden; }
+    .svc-bar-fill { display:block; height:100%; border-radius:4px; }
+    .svc-bar-val { font-size:12.5px; color:#4b5563; text-align:right; white-space:nowrap; }
+    .svc-legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; font-size:12px; color:#4b5563; }
+    .svc-legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+    .svc-legend-note { color:#6b7280; margin-left:auto; }
+    @media (max-width: 700px) { .svc-bar-row { grid-template-columns: 1fr 70px; } .svc-bar-track { grid-column: 1 / -1; order: 3; } }`;
+  document.head.appendChild(css);
+})();
+
+
+(function(){
+  /* ==========================================================================
+     Verified stable exits (Glendale Exhibit A §8).
+
+     An exit to family, a spouse or partner, shared housing or a rented room,
+     relocation, or another City-approved arrangement counts toward the
+     Successful Housing Exits goal only once staff confirm all four conditions
+     in the scope. The exit form asks for them when such a destination is
+     chosen; the database counts the exit when stable_exit_verified is true.
+     Programs without the stable-exit measure (Holloway) never see this.
+     ========================================================================== */
+
+  const esc = s => App.escape(s ?? '');
+  const CRITERIA = [
+    'The participant agrees the placement is safe and appropriate.',
+    'The arrangement is expected to continue for at least 90 days.',
+    'The receiving household agreed to the placement, or this could not reasonably be verified.',
+    'The destination is not an emergency shelter, temporary motel stay, hospital, correctional facility or unsheltered setting.'
+  ];
+  const applies = () => !!App.tracksStableExitFollowUps?.();
+  const isStableDest = type => App.exitDestinationCategory({ exit_destination_type: type }) === 'positive_non_permanent';
+
+  const baseOpen = App.openClientForm;
+  App.openClientForm = function(id = null){
+    const out = baseOpen.apply(this, arguments);
+    if (!applies()) return out;
+    const sel = document.getElementById('cf-exit-type');
+    if (!sel || document.getElementById('cf-stable-verify')) return out;
+    const c = id ? (this.data.clients || []).find(x => x.id === id) || {} : {};
+    const checked = !!c.stable_exit_verified;
+    sel.closest('.field-group')?.insertAdjacentHTML('afterend', `<div class="field-group full" id="cf-stable-verify" style="display:none">
+      <div class="stable-verify">
+        <div class="stable-verify-title">Verified stable exit <span class="field-hint">Exhibit A §8 · counts toward Successful Housing Exits when all four are confirmed</span></div>
+        ${CRITERIA.map((t, i) => `<label class="reason-row"><input type="checkbox" class="cf-stable-crit" id="cf-stable-crit-${i}" ${checked ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
+        <div class="field-hint" id="cf-stable-status"></div>
+      </div></div>`);
+    const box = document.getElementById('cf-stable-verify');
+    const sync = () => {
+      const show = isStableDest(sel.value);
+      box.style.display = show ? '' : 'none';
+      const n = [...box.querySelectorAll('.cf-stable-crit')].filter(x => x.checked).length;
+      const st = document.getElementById('cf-stable-status');
+      st.textContent = n === CRITERIA.length ? 'Verified: counts toward the goal and starts the 30- and 90-day follow-ups.'
+        : `${n} of ${CRITERIA.length} confirmed. Not yet counted toward the goal.`;
+      st.style.color = n === CRITERIA.length ? '#1E6B3A' : '';
+      if (c.stable_exit_verified_on && n === CRITERIA.length) st.textContent += ` Verified ${this.formatDate(c.stable_exit_verified_on)}${c.stable_exit_verified_by ? ' by ' + c.stable_exit_verified_by : ''}.`;
+    };
+    sel.addEventListener('change', sync);
+    box.querySelectorAll('.cf-stable-crit').forEach(x => x.addEventListener('change', sync));
+    sync();
+    return out;
+  };
+
+  const baseSave = App.saveClient;
+  App.saveClient = async function(){
+    if (!applies() || !document.getElementById('cf-stable-verify')) return baseSave.apply(this, arguments);
+    const id = this.currentClientId || document.getElementById('cf-hmis-id')?.value.trim();
+    const exited = document.getElementById('cf-status')?.value === 'Exited';
+    const dest = document.getElementById('cf-exit-type')?.value || '';
+    const all = [...document.querySelectorAll('.cf-stable-crit')].every(x => x.checked);
+    const before = (this.data.clients || []).find(x => x.id === id) || {};
+    const out = await baseSave.apply(this, arguments);
+    const saved = (this.data.clients || []).find(x => x.id === id);
+    if (!saved) return out;                                  // the save did not go through
+    const verified = exited && isStableDest(dest) && all;
+    if (!!before.stable_exit_verified === verified && !(verified && saved.exit_housing_stability !== 'Stable')) return out;
+    const patch = { stable_exit_verified: verified,
+      stable_exit_verified_on: verified ? (before.stable_exit_verified_on || this.localDate()) : null,
+      stable_exit_verified_by: verified ? (before.stable_exit_verified_by || this.user?.email || null) : null };
+    if (exited && isStableDest(dest)) Object.assign(patch, verified
+      ? { exit_housing_stability: 'Stable', exit_expected_90_days: 'Yes', housing_goal_achieved: 'Yes' }
+      : { exit_housing_stability: 'Potentially Stable', exit_expected_90_days: 'Unknown', housing_goal_achieved: 'Partially' });
+    const { error } = await this.sb.from('holloway_clients').update(patch).eq('program_id', this.program.id).eq('id', id);
+    if (error) { this.toast?.('Exit saved, but the stable-exit verification could not be: ' + error.message, { error: true }); return out; }
+    await this.loadAll();
+    if (this.view) this.showView(this.view);
+    if (verified) this.toast?.('Verified stable exit recorded. It counts toward Successful Housing Exits.');
+    return out;
+  };
+
+  const css = document.createElement('style');
+  css.textContent = `.stable-verify { border:1px solid #cfe3d6; background:#f4faf6; border-radius:8px; padding:12px 14px; }
+    .stable-verify-title { font-weight:700; color:#1E6B3A; margin-bottom:6px; } .stable-verify-title .field-hint { font-weight:400; margin-left:6px; }`;
+  document.head.appendChild(css);
+})();
+
 
 document.addEventListener('DOMContentLoaded', () => App.init());
 </script>
