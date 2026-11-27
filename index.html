@@ -21648,6 +21648,308 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
 })();
 
 
+
+(function(){
+  /* ==========================================================================
+     Program choice at sign-in, first-login passwords, and portal-managed
+     accounts.
+
+     1. Anyone with more than one program (City admins, and agency staff
+        assigned to several) chooses the program to work in right after signing
+        in, instead of landing in whichever one was used last. The choice holds
+        for the browser tab; the top-bar switcher still changes it at any time,
+        and signing out asks again next time.
+
+     2. Accounts created from Access Management get a temporary password and
+        must set their own the first time they sign in.
+
+     3. Access Management now creates and updates the login itself (through the
+        admin-manage-user edge function), shows whether each person has a login
+        and when they last signed in, and can issue a new temporary password.
+     ========================================================================== */
+
+  const esc = s => App.escape(s ?? '');
+  const chosenKey = () => 'holloway.programChosen.' + String(App.user?.email || 'anon').toLowerCase();
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+  // A full-screen card in the sign-in style, used for both new screens.
+  App._showGate = function({ title, sub, body }){
+    this._hideGate();
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'none';
+    const gate = document.createElement('div');
+    gate.id = 'gate-screen';
+    gate.innerHTML = `<div class="login-card" style="max-width:460px;">
+        <div class="login-header">
+          <img class="login-logo-img" src="https://www.governmentjobs.com/AgencyPages/weho/agencyImages/download/weho_white_on_blue.jpg" alt="City of West Hollywood logo" />
+          <div class="login-title">${esc(title)}</div>
+          <div class="login-sub">${esc(sub)}</div>
+        </div>
+        <div class="login-body">${body}</div>
+      </div>`;
+    document.body.appendChild(gate);
+    return gate;
+  };
+  App._hideGate = function(){ document.getElementById('gate-screen')?.remove(); };
+
+  /* ---------------------------------------------------- 1. choose a program */
+  App.pickProgram = function(list, currentId){
+    return new Promise(resolve => {
+      const last = this.rememberedProgramId();
+      const gate = this._showGate({
+        title: 'Choose a program',
+        sub: 'You have access to more than one program. Pick the one you want to manage.',
+        body: `<div class="program-pick-list">
+            ${list.map(p => `<button type="button" class="program-pick" data-pick="${esc(p.id)}">
+                <span class="program-pick-name">${esc(p.name)}</span>
+                <span class="program-pick-meta">${esc(p.agency_name || p.organization || p.agency || '')}${p.id === last ? ' · Last used' : ''}</span>
+              </button>`).join('')}
+          </div>
+          <div class="login-footer">You can switch programs any time from the menu at the top of the portal.</div>`
+      });
+      gate.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => {
+        this._hideGate();
+        document.getElementById('loading-screen').style.display = 'flex';
+        resolve(b.dataset.pick);
+      }));
+      (gate.querySelector(`[data-pick="${CSS.escape(last || currentId || '')}"]`) || gate.querySelector('[data-pick]'))?.focus();
+    });
+  };
+
+  const previousResolve = App.resolveAvailablePrograms;
+  App.resolveAvailablePrograms = async function(){
+    await previousResolve.call(this);
+    const list = this.availablePrograms || [];
+    if (list.length < 2) return;
+    let chosen = null;
+    try { chosen = sessionStorage.getItem(chosenKey()); } catch (e) {}
+    if (chosen) return;
+    const id = await this.pickProgram(list, this.program?.id);
+    this.program = list.find(p => p.id === id) || this.program;
+    try {
+      localStorage.setItem(this.programStorageKey(), this.program.id);
+      sessionStorage.setItem(chosenKey(), '1');
+    } catch (e) {}
+  };
+
+  // Switching from the top bar reloads the page; don't ask again after that.
+  const previousSwitch = App.switchProgram;
+  App.switchProgram = function(id){
+    try { sessionStorage.setItem(chosenKey(), '1'); } catch (e) {}
+    return previousSwitch.call(this, id);
+  };
+
+  const previousLogout = App.logout;
+  App.logout = async function(){
+    try { sessionStorage.removeItem(chosenKey()); } catch (e) {}
+    return previousLogout.call(this);
+  };
+
+  /* -------------------------------------- 2. set a password at first sign-in */
+  App.requireNewPassword = function(){
+    return new Promise(resolve => {
+      const gate = this._showGate({
+        title: 'Set your password',
+        sub: 'You signed in with a temporary password. Choose your own to continue.',
+        body: `<div class="field-group">
+            <label class="field-label required" for="first-password">New Password</label>
+            <input type="password" id="first-password" class="field-input" autocomplete="new-password" placeholder="••••••••" />
+          </div>
+          <div class="field-group" style="margin-top:12px;">
+            <label class="field-label required" for="first-password-confirm">Confirm New Password</label>
+            <input type="password" id="first-password-confirm" class="field-input" autocomplete="new-password" placeholder="••••••••" />
+          </div>
+          <div class="field-hint" style="margin-top:8px;">At least ${this.MIN_PASSWORD_LENGTH} characters.</div>
+          <button class="login-submit" id="first-password-btn" style="margin-top:16px;">Set Password &amp; Continue →</button>
+          <button type="button" class="login-link-btn" id="first-password-cancel">Sign out</button>
+          <p id="first-password-error" style="color:#C0392B;font-size:12px;margin:12px 0 0;"></p>`
+      });
+      const err = gate.querySelector('#first-password-error');
+      const btn = gate.querySelector('#first-password-btn');
+      const submit = async () => {
+        const pw = gate.querySelector('#first-password').value;
+        const confirm = gate.querySelector('#first-password-confirm').value;
+        const problem = this.validateNewPassword(pw, confirm);
+        if (problem) { err.textContent = problem; return; }
+        btn.disabled = true; btn.textContent = 'Saving…'; err.textContent = '';
+        const { error } = await this.sb.auth.updateUser({ password: pw, data: { must_change_password: false } });
+        if (error) { btn.disabled = false; btn.textContent = 'Set Password & Continue →'; err.textContent = error.message || 'The password could not be saved.'; return; }
+        this._hideGate();
+        resolve(true);
+      };
+      btn.addEventListener('click', submit);
+      gate.querySelector('#first-password-confirm').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+      gate.querySelector('#first-password-cancel').addEventListener('click', async () => {
+        await this.sb.auth.signOut();
+        this._hideGate();
+        this.showLogin();
+        resolve(false);
+      });
+      setTimeout(() => gate.querySelector('#first-password')?.focus(), 50);
+    });
+  };
+
+  const previousEstablish = App.establishSession;
+  App.establishSession = async function(user){
+    if (user?.user_metadata?.must_change_password) {
+      const ok = await this.requireNewPassword();
+      if (!ok) return;
+      const { data } = await this.sb.auth.getUser();
+      user = data?.user || user;
+    }
+    return previousEstablish.call(this, user);
+  };
+
+  /* --------------------------------------- 3. accounts from Access Management */
+  App.manageUser = async function(payload){
+    const { data, error } = await this.sb.functions.invoke('admin-manage-user', { body: payload });
+    if (error) {
+      // The function's own error message is in the response body.
+      let msg = error.message;
+      try { const b = await error.context?.json?.(); if (b?.error) msg = b.error; } catch (e) {}
+      throw new Error(msg || 'The request failed.');
+    }
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+
+  App.saveApprovedUser = async function(){
+    const msg = document.getElementById('au-msg');
+    const email = document.getElementById('au-email').value.trim().toLowerCase();
+    const full_name = document.getElementById('au-name').value.trim();
+    const organization = document.getElementById('au-org').value.trim() || this.agencyName();
+    const access = document.getElementById('au-access').value;
+    const active = document.getElementById('au-active').value === 'true';
+    if (!email || !full_name) { msg.textContent = 'Email and name are required.'; return; }
+    const btn = document.getElementById('btn-save-user');
+    btn.disabled = true; msg.textContent = 'Saving…';
+    try {
+      const r = await this.manageUser({ action: 'save', email, full_name, organization, access, active, program_id: this.program?.id || null });
+      this._tempCred = r.temp_password ? { email, password: r.temp_password, isNew: true } : null;
+      this._loginStatusAt = 0;
+      await this.loadAll();
+      this.renderAccessManagement();
+      const m2 = document.getElementById('au-msg');
+      if (m2) m2.textContent = r.login === 'created'
+        ? `Saved. A login was created for ${email}.`
+        : `Saved.${r.program_granted ? ` ${email} now has access to ${this.programName()}.` : ''}`;
+    } catch (e) {
+      btn.disabled = false;
+      msg.textContent = e.message;
+    }
+  };
+
+  App.resetUserPassword = async function(email){
+    if (!confirm(`Issue a new temporary password for ${email}? Their current password will stop working.`)) return;
+    const msg = document.getElementById('au-msg');
+    if (msg) msg.textContent = 'Resetting…';
+    try {
+      const r = await this.manageUser({ action: 'reset_password', email });
+      this._tempCred = { email, password: r.temp_password, isNew: false };
+      this._loginStatusAt = 0;
+      this.renderAccessManagement();
+      const m2 = document.getElementById('au-msg');
+      if (m2) m2.textContent = `New temporary password issued for ${email}.`;
+    } catch (e) {
+      if (msg) msg.textContent = e.message;
+    }
+  };
+
+  App.loadLoginStatus = async function(){
+    if (this._loginStatusAt && Date.now() - this._loginStatusAt < 60000) return;
+    const emails = (this.data.approvedUsers || []).map(u => u.email).filter(Boolean);
+    try {
+      const r = await this.manageUser({ action: 'login_status', emails });
+      this._loginStatus = Object.fromEntries((r.users || []).map(u => [String(u.email).toLowerCase(), u]));
+      this._loginStatusAt = Date.now();
+    } catch (e) {
+      console.warn('login status unavailable', e);
+      this._loginStatus = null;
+    }
+  };
+
+  const loginLine = (u) => {
+    const st = App._loginStatus;
+    if (!st) return '';
+    const s = st[String(u.email || '').toLowerCase()];
+    if (!s) return '<div class="login-line warn">No login yet. Save the user to create one.</div>';
+    if (s.banned) return '<div class="login-line">Login blocked (inactive)</div>';
+    if (s.must_change_password) return '<div class="login-line warn">Temporary password not yet changed</div>';
+    return `<div class="login-line">${s.last_sign_in_at ? 'Last sign-in ' + esc(fmtDate(s.last_sign_in_at)) : 'Has not signed in yet'}</div>`;
+  };
+
+  const previousRenderAccess = App.renderAccessManagement;
+  App.renderAccessManagement = function(){
+    previousRenderAccess.call(this);
+    const el = document.getElementById('view-access');
+    if (!el || !this.isAdmin()) return;
+
+    const formHint = el.querySelector('.card .field-hint');
+    if (formHint && !formHint.dataset.loginNote) {
+      formHint.dataset.loginNote = '1';
+      formHint.textContent += ' Saving a new user creates their login and shows a temporary password to share with them; they choose their own password the first time they sign in.';
+    }
+
+    // One-time display of a temporary password just issued.
+    const saveBtn = el.querySelector('#btn-save-user');
+    if (this._tempCred && saveBtn) {
+      const c = this._tempCred;
+      const box = document.createElement('div');
+      box.className = 'temp-cred';
+      box.innerHTML = `<div class="temp-cred-title">${c.isNew ? 'Login created' : 'New temporary password'} for ${esc(c.email)}</div>
+        <div class="temp-cred-row"><code id="temp-cred-pw">${esc(c.password)}</code>
+          <button type="button" class="btn btn-ghost btn-sm" id="temp-cred-copy">Copy</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="temp-cred-done">Done</button></div>
+        <div class="field-hint">Share it with them securely. They sign in on the Password tab with their email and this password, then choose their own. It won't be shown again.</div>`;
+      saveBtn.parentElement.appendChild(box);
+      box.querySelector('#temp-cred-copy').addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(c.password); box.querySelector('#temp-cred-copy').textContent = 'Copied'; } catch (e) {}
+      });
+      box.querySelector('#temp-cred-done').addEventListener('click', () => { this._tempCred = null; box.remove(); });
+    }
+
+    // Login status and password reset beside each person's Edit button.
+    const decorate = () => {
+      el.querySelectorAll('[data-edit-user]').forEach(b => {
+        const cell = b.parentElement;
+        cell.querySelectorAll('.login-line,[data-reset-user]').forEach(n => n.remove());
+        const u = (this.data.approvedUsers || []).find(x => x.email === b.dataset.editUser);
+        if (!u) return;
+        const s = this._loginStatus?.[String(u.email).toLowerCase()];
+        if (s && u.active) {
+          const r = document.createElement('button');
+          r.className = 'btn btn-ghost btn-sm';
+          r.dataset.resetUser = u.email;
+          r.textContent = 'Reset password';
+          r.style.marginLeft = '4px';
+          r.addEventListener('click', () => this.resetUserPassword(u.email));
+          cell.appendChild(r);
+        }
+        cell.insertAdjacentHTML('beforeend', loginLine(u));
+      });
+    };
+    decorate();
+    this.loadLoginStatus().then(decorate);
+  };
+
+  const css = document.createElement('style');
+  css.textContent = `
+    #gate-screen { position: fixed; inset: 0; background: var(--navy); z-index: 2100; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .program-pick-list { display: grid; gap: 10px; margin-bottom: 14px; }
+    .program-pick { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; text-align: left; padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: 10px; background: var(--white); cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease; }
+    .program-pick:hover, .program-pick:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(0,0,0,.06); outline: none; }
+    .program-pick-name { font-weight: 700; color: var(--navy); font-size: 15px; }
+    .program-pick-meta { font-size: 12px; color: var(--gray-600); }
+    .temp-cred { margin-top: 14px; border: 1px solid #cfe3d6; background: #f4faf6; border-radius: 8px; padding: 12px 14px; }
+    .temp-cred-title { font-weight: 700; color: #1E6B3A; margin-bottom: 8px; }
+    .temp-cred-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+    .temp-cred-row code { font-size: 15px; padding: 4px 10px; background: var(--white); border: 1px solid var(--border); border-radius: 6px; letter-spacing: .04em; }
+    .login-line { font-size: 11px; color: var(--gray-600); margin-top: 4px; }
+    .login-line.warn { color: #9A6700; }`;
+  document.head.appendChild(css);
+})();
+
 document.addEventListener('DOMContentLoaded', () => App.init());
 </script>
 </body>
