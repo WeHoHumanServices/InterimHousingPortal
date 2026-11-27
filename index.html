@@ -2673,7 +2673,8 @@ const App = {
     this.installToastRegion();
     this.installBeforeUnloadGuard();
     this.startSavedTicker();
-    this.showView(this.isAdmin() ? 'admin-review' : 'dashboard');
+    // Everyone lands on the dashboard; City admins reach Admin Review from the sidebar.
+    this.showView('dashboard');
   },
 
   installToastRegion() {
@@ -15320,9 +15321,16 @@ const App = {
     const s = this.fyStart();
     const through = this.dateMin(today, this.fyEnd());
     const entries = all.map(c => this.dateOnly(c.entry_date)).filter(Boolean).sort();
-    const opened = entries[0] || null;
-    const enteredByToday = all.filter(c => { const d = this.dateOnly(c.entry_date); return d && d <= today; });
-    const phExits = all.filter(c => { const d = this.dateOnly(c.exit_date); return d && d <= today && this.isPermanentExit(c); });
+    // Program to date starts with the first contract term, not the first
+    // record: clients imported from before the contract began (Glendale's
+    // August 2026 entries) are counted only from the contract start onward.
+    const contractStart = (this.contractPeriods || []).map(cp => cp.start).filter(Boolean).sort()[0] || null;
+    const opened = [entries[0], contractStart].filter(Boolean).sort().pop() || null;
+    const enteredByToday = all.filter(c => {
+      const d = this.dateOnly(c.entry_date), x = this.dateOnly(c.exit_date);
+      return d && d <= today && (!opened || !x || x >= opened);
+    });
+    const phExits = all.filter(c => { const d = this.dateOnly(c.exit_date); return d && d <= today && (!opened || d >= opened) && this.isPermanentExit(c); });
     const bedNights = opened ? all.reduce((sum, c) => sum + Number(this.clientBedNights(c, opened, today) || 0), 0) : 0;
     const view = this.data.clients || [];
     const carried = view.filter(c => this.isCarriedOverClient(c));
