@@ -21958,6 +21958,201 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
   document.head.appendChild(css);
 })();
 
+
+(function(){
+  /* ==========================================================================
+     Quarterly report items in the monthly report (monthly-only programs).
+
+     Glendale no longer files a quarterly report, so what that report carried
+     now travels with each monthly report, for the month and for the contract
+     year to date:
+
+       Persons served and outcomes   unduplicated persons served, active at
+                                     month end, new intakes, exits, permanent
+                                     housing exits, average days to permanent
+                                     housing, non-permanent exits by type
+       Demographics                  age by gender, race/ethnicity, household
+                                     language
+
+     The counted figures are live while the month is open and frozen into the
+     report (quarterly_items) when it is saved or submitted, so a submitted
+     month keeps the figures it was certified with.
+     ========================================================================== */
+
+  const esc = s => App.escape(s ?? '');
+  const num = n => (n == null || n === '' ? '—' : Number(n).toLocaleString());
+  const monthlyOnly = () => !!App.program && App.programHas?.('has_monthly_report') && App.hasQuarterlyReport && !App.hasQuarterlyReport();
+  const BANDS = ['Positive Non-Permanent', 'Temporary / Institutional', 'Unstable / Unknown', 'Deceased', 'Other Non-Permanent'];
+  const GENDERS = [['male','Male'],['female','Female'],['nb','NB / GNC'],['unk','Unknown']];
+
+  App.monthlyQuarterlyItems = function(month){
+    const s = month, e = this.monthEnd(month), ys = this.fyStart();
+    const clients = this.data.clients || [];
+    const served = clients.filter(c => this.clientOverlaps(c, s, e));
+    const ytd = clients.filter(c => this.clientOverlaps(c, ys, e));
+    const entered = (a, b) => clients.filter(c => { const d = this.dateOnly(c.entry_date); return d && d >= a && d <= b; });
+    const exited = (a, b) => clients.filter(c => { const d = this.dateOnly(c.exit_date); return d && d >= a && d <= b; });
+    const exM = exited(s, e), exY = exited(ys, e);
+    const ph = list => list.filter(c => this.isPermanentExit(c));
+    const avg = list => list.length ? Math.round(list.reduce((t, c) => t + this.daysInclusive(this.dateOnly(c.entry_date), this.dateOnly(c.exit_date)), 0) / list.length) : null;
+    const bands = list => { const o = {}; list.filter(c => !this.isPermanentExit(c)).forEach(c => { const b = this.exitOutcomeBand(c) || 'Other Non-Permanent'; o[b] = (o[b] || 0) + 1; }); return o; };
+    return {
+      month, through: e, year_start: ys, computed_at: new Date().toISOString(),
+      served: served.length, served_ytd: ytd.length,
+      active_end: clients.filter(c => this.clientStatus(c, e) === 'Active').length,
+      intakes: entered(s, e).length, intakes_ytd: entered(ys, e).length,
+      exits: exM.length, exits_ytd: exY.length,
+      ph_exits: ph(exM).length, ph_exits_ytd: ph(exY).length,
+      avg_days_ph: avg(ph(exM)), avg_days_ph_ytd: avg(ph(exY)),
+      nonperm: bands(exM), nonperm_ytd: bands(exY),
+      demo: this.demographicsForClientList(served), demo_ytd: this.demographicsForClientList(ytd)
+    };
+  };
+
+  // Submitted and accepted months show the figures they were certified with.
+  App.monthlyItemsFor = function(month){
+    const r = this.monthlyReport(month);
+    const frozen = r && ['submitted','accepted'].includes(r.status) && r.quarterly_items;
+    return frozen ? { items: r.quarterly_items, frozen: true } : { items: this.monthlyQuarterlyItems(month), frozen: false };
+  };
+
+  const row = (label, m, y, cls = '') => `<tr class="${cls}"><td>${label}</td><td>${m}</td><td>${y}</td></tr>`;
+
+  App.monthlyOutcomesTable = function(it, tableClass){
+    const bandRows = BANDS.filter(b => (it.nonperm?.[b] || 0) || (it.nonperm_ytd?.[b] || 0))
+      .map(b => row(`&nbsp;&nbsp;${esc(b)}`, num(it.nonperm?.[b] || 0), num(it.nonperm_ytd?.[b] || 0))).join('');
+    return `<table class="${tableClass}"><thead><tr><th>Measure</th><th>This month</th><th>Contract year to date</th></tr></thead><tbody>
+      ${row('Unduplicated persons served', num(it.served), num(it.served_ytd), 'mq-strong')}
+      ${row('Active on the last day of the month', num(it.active_end), '<span class="field-hint">month-end snapshot</span>')}
+      ${row('New intakes', num(it.intakes), num(it.intakes_ytd))}
+      ${row('Exits', num(it.exits), num(it.exits_ytd))}
+      ${row('Exits to permanent housing', num(it.ph_exits), num(it.ph_exits_ytd), 'mq-strong')}
+      ${row('Average days to permanent housing', it.avg_days_ph == null ? '—' : num(it.avg_days_ph), it.avg_days_ph_ytd == null ? '—' : num(it.avg_days_ph_ytd))}
+      ${row('Non-permanent exits', num(it.exits - it.ph_exits), num(it.exits_ytd - it.ph_exits_ytd))}
+      ${bandRows}
+    </tbody></table>`;
+  };
+
+  App.monthlyDemographicsHtml = function(it, tableClass){
+    const ag = it.demo?.ageGender || {}, agY = it.demo_ytd?.ageGender || {};
+    const sum = o => GENDERS.reduce((t, [k]) => t + Number(o?.[k] || 0), 0);
+    const ageRows = this.ageBands.filter(b => sum(ag[b]) || sum(agY[b])).map(b => `<tr><td>${esc(b)}</td>
+        ${GENDERS.map(([k]) => `<td>${num(ag[b]?.[k] || 0)}</td>`).join('')}<td><strong>${num(sum(ag[b]))}</strong></td><td>${num(sum(agY[b]))}</td></tr>`).join('');
+    const tot = k => this.ageBands.reduce((t, b) => t + Number(ag[b]?.[k] || 0), 0);
+    const totY = this.ageBands.reduce((t, b) => t + sum(agY[b]), 0);
+    const simple = (title, keys, m, y) => {
+      const all = [...new Set([...keys, ...Object.keys(m || {}), ...Object.keys(y || {})])].filter(k => (m?.[k] || 0) || (y?.[k] || 0));
+      return `<table class="${tableClass}"><thead><tr><th>${esc(title)}</th><th>This month</th><th>Year to date</th></tr></thead><tbody>
+        ${all.map(k => row(esc(k), num(m?.[k] || 0), num(y?.[k] || 0))).join('') || '<tr><td colspan="3">No participants served.</td></tr>'}
+        ${row('Total', num(Object.values(m || {}).reduce((a, b) => a + b, 0)), num(Object.values(y || {}).reduce((a, b) => a + b, 0)), 'mq-total')}
+      </tbody></table>`;
+    };
+    return `<h3 class="mq-h3">Age and gender</h3>
+      <table class="${tableClass}"><thead><tr><th>Age</th>${GENDERS.map(([, l]) => `<th>${l}</th>`).join('')}<th>Month total</th><th>Year to date</th></tr></thead><tbody>
+        ${ageRows || `<tr><td colspan="${GENDERS.length + 3}">No participants served.</td></tr>`}
+        <tr class="mq-total"><td>Total</td>${GENDERS.map(([k]) => `<td>${num(tot(k))}</td>`).join('')}<td>${num(GENDERS.reduce((t, [k]) => t + tot(k), 0))}</td><td>${num(totY)}</td></tr>
+      </tbody></table>
+      <div class="mq-two">
+        <div><h3 class="mq-h3">Race / ethnicity</h3>${simple('Category', this.ethnicityKeys, it.demo?.ethnicity, it.demo_ytd?.ethnicity)}</div>
+        <div><h3 class="mq-h3">Household language</h3>${simple('Language', this.languageKeys, it.demo?.language, it.demo_ytd?.language)}</div>
+      </div>`;
+  };
+
+  const baseRender = App.renderMonthly;
+  App.renderMonthly = function(){
+    const out = baseRender.apply(this, arguments);
+    if (!monthlyOnly()) return out;
+    const el = document.getElementById('view-monthly');
+    const narrCard = el?.querySelector('#mr-narrative')?.closest('.card');
+    if (!el || el.querySelector('#mq-outcomes')) return out;
+    const month = this.monthlyMonth(); if (!month) return out;
+    const r = this.monthlyReport(month);
+    const { items: it, frozen } = this.monthlyItemsFor(month);
+    const locked = this.monthlyIsLocked(r);
+    const canEdit = !locked && (this.canEditQuarter?.() || this.isAdmin());
+    const basis = frozen
+      ? `Frozen when the report was submitted (${esc(this.formatDate(this.dateOnly(it.computed_at)))}).`
+      : 'Counted live from participant records; saved with the report.';
+    const yearLabel = `${this.formatDate(it.year_start)} – ${this.formatDate(it.through)}`;
+
+    const html = `
+      <div class="card" id="mq-outcomes" style="margin-top:16px"><div class="card-header">
+          <div><h2 class="card-title">Persons Served and Housing Outcomes</h2>
+            <div class="field-hint">Formerly in the quarterly report. Contract year to date runs ${esc(yearLabel)}. ${basis}</div></div>
+        </div><div class="card-body"><div class="client-table-wrap">${this.monthlyOutcomesTable(it, 'client-table mq-table')}</div></div></div>
+
+      <div class="card" id="mq-demographics" style="margin-top:16px"><div class="card-header">
+          <div><h2 class="card-title">Demographics</h2>
+            <div class="field-hint">Unduplicated persons served this month and contract year to date. ${basis}</div></div>
+        </div><div class="card-body">${this.monthlyDemographicsHtml(it, 'client-table mq-table')}</div></div>`;
+    if (narrCard) narrCard.insertAdjacentHTML('beforebegin', html); else el.insertAdjacentHTML('beforeend', html);
+
+    return out;
+  };
+
+  App.saveMonthlyQuarterlyItems = async function(month){
+    const patch = { quarterly_items: this.monthlyQuarterlyItems(month) };
+    const { error } = await this.sb.from('holloway_monthly_reports').update(patch)
+      .eq('program_id', this.program.id).eq('report_month', month);
+    return error;
+  };
+
+  const baseSave = App.saveMonthlyNarrative;
+  App.saveMonthlyNarrative = async function(){
+    if (!monthlyOnly()) return baseSave.apply(this, arguments);
+    const month = this.monthlyMonth();
+    await baseSave.apply(this, arguments);
+    const saved = this.monthlyReport(month);
+    // A submitted or accepted month keeps the figures it was certified with.
+    if (!saved || ['submitted','accepted'].includes(saved.status)) return;
+    const err = await this.saveMonthlyQuarterlyItems(month);
+    if (err) { this.mrMsg('Could not save outcomes and demographics: ' + err.message, 'err'); return; }
+    await this.loadAll(); this.renderMonthly(); this.mrMsg('Saved.', 'ok');
+  };
+
+  const baseSubmit = App.submitMonthly;
+  App.submitMonthly = async function(){
+    if (!monthlyOnly()) return baseSubmit.apply(this, arguments);
+    const month = this.monthlyMonth();
+    if (this.monthlyReport(month)) {
+      // Freeze the counted figures with the certified report.
+      const err = await this.saveMonthlyQuarterlyItems(month);
+      if (err) { this.mrMsg('Could not save outcomes and demographics: ' + err.message, 'err'); return; }
+    }
+    return baseSubmit.apply(this, arguments);
+  };
+
+  // Printed report.
+  const basePrint = App.monthlyPrintHtml;
+  App.monthlyPrintHtml = function(month = this.monthlyMonth()){
+    const html = basePrint.call(this, month);
+    if (!monthlyOnly()) return html;
+    const r = this.monthlyReport(month);
+    const { items: it } = this.monthlyItemsFor(month);
+    const block = `
+      <div class="print-section"><h2>Persons Served and Housing Outcomes</h2>
+        ${this.monthlyOutcomesTable(it, 'print-table')}</div>
+      <div class="print-section"><h2>Demographics</h2>
+        <p class="print-note">Unduplicated persons served this month and contract year to date.</p>
+        ${this.monthlyDemographicsHtml(it, 'print-table')}</div>`;
+    const anchor = '<div class="print-section"><h2>Narrative</h2>';
+    return html.includes(anchor) ? html.replace(anchor, block + anchor) : html + block;
+  };
+
+  const css = document.createElement('style');
+  css.textContent = `
+    .mq-table td:not(:first-child), .mq-table th:not(:first-child) { text-align: right; }
+    .mq-table tr.mq-strong td { font-weight: 700; }
+    .mq-table tr.mq-total td, .print-table tr.mq-total td { font-weight: 700; border-top: 2px solid var(--border, #e5e7eb); }
+    .mq-h3 { font-size: 13px; font-weight: 700; color: var(--navy); margin: 16px 0 8px; }
+    .mq-h3:first-child { margin-top: 0; }
+    .mq-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 900px) { .mq-two { grid-template-columns: 1fr; } }
+    .mq-input { text-align: right; margin-left: auto; }
+    @media print { .mq-two { display: block; } }`;
+  document.head.appendChild(css);
+})();
+
 document.addEventListener('DOMContentLoaded', () => App.init());
 </script>
 </body>
