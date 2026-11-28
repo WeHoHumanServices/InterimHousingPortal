@@ -967,29 +967,29 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .bed-tile-kind { font-size:10px; font-weight:700; letter-spacing:.03em; padding:1px 6px; border-radius:999px; margin-left:4px; vertical-align:middle; }
 .bed-tile-kind.k-res { background:#e7f1fb; color:#1e3a5f; }
 .bed-tile-kind.k-ffs { background:#f9eeda; color:#8a5a00; }
-.census-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
+
 .census-title { font-size:13px; font-weight:800; letter-spacing:.03em; color:var(--navy); margin:0; }
 .census-asof { font-size:11px; color:var(--gray-400); }
-.census-tile-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
-.census-tile { padding:2px 0; }
-.census-tile-label { font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--gray-400); }
-.census-tile-value { font-size:26px; font-weight:800; color:var(--navy); letter-spacing:-.02em; line-height:1.1; margin-top:4px; }
-.census-tile-value .census-of { font-size:15px; font-weight:600; color:var(--gray-400); }
-.census-tile-sub { font-size:11px; color:var(--gray-500); margin-top:3px; }
-.census-tile.tile-open .census-tile-value { color:var(--green); }
-.census-tile.tile-open.full .census-tile-value { color:var(--amber); }
-.census-tile.tile-open.low .census-tile-value { color:var(--navy); }
+
+
+
+
+
+
+
+
+
 .bed-strip { display:flex; flex-wrap:wrap; gap:5px; margin:16px 0 4px; }
 .bed-pip { width:100%; max-width:26px; flex:1 1 18px; height:9px; border-radius:3px; }
 .bed-pip.filled { background:var(--navy); }
 .bed-pip.open { background:var(--gray-200); box-shadow:inset 0 0 0 1px var(--border); }
-.census-flags { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; padding-top:13px; border-top:1px solid var(--gray-100); }
-.census-flag { background:var(--amber-light); border:1px solid #F0DFB8; color:var(--gray-800); border-radius:999px; padding:5px 13px; font-size:11.5px; cursor:pointer; font-family:inherit; transition:all .15s ease; }
-.census-flag:hover { border-color:var(--amber); background:#FDF0D8; }
-.census-flag strong { color:var(--amber); font-weight:800; }
-.census-flag-clear { background:var(--green-light); color:var(--green); border-radius:999px; padding:5px 13px; font-size:11.5px; font-weight:700; }
-@media (max-width:980px) { .census-tile-row { grid-template-columns:repeat(3,1fr); row-gap:18px; } }
-@media (max-width:620px) { .census-tile-row { grid-template-columns:repeat(2,1fr); } }
+
+
+
+
+
+
+
 
 /* ── EXITS SCREEN ────────────────────────────────────────────────────── */
 .exit-tile-row { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:18px; }
@@ -1579,6 +1579,36 @@ button, input, select, textarea { font-family: var(--font-ui); }
   .nav-toggle { display: none; }
   .nav-scrim { display: none; }
 
+  /* Active Caseload: compact census line, then one filter row above the table. */
+  .census-compact .card-body { padding: 14px 20px; }
+  .census-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; }
+  .census-line .census-title { margin: 0 4px 0 0; font-size: 14px; }
+  .census-stat { font-size: 13px; color: var(--gray-600, #4b5563); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .census-stat strong { font-size: 18px; font-weight: 800; color: var(--navy); margin-right: 2px; }
+  .census-stat .census-of { font-size: 13px; font-weight: 600; color: var(--gray-400); }
+  .census-stat.tile-open strong { color: var(--green); }
+  .census-stat.tile-open.full strong { color: var(--amber); }
+  .census-stat.tile-open.low strong { color: var(--navy); }
+  .census-line .census-asof { margin-left: auto; font-size: 12px; }
+  .census-compact .bed-strip { margin-top: 10px; }
+  .caseload-filter-row { margin: 4px 0 10px; }
+  .caseload-flags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .caseload-filter-row .chip-toggle { font-size: 12.5px; padding: 6px 12px; }
+  .chip-toggle .chip-count { font-weight: 800; margin-left: 2px; }
+  .chip-toggle:not(.active) .chip-count { color: var(--amber); }
+  .caseload-filter-row .filter-count { font-size: 13px; color: var(--gray-600, #4b5563); }
+  .caseload-filter-row .filter-count strong { color: var(--navy); }
+
+  /* Today panel: counts open the residents behind them. */
+  .today-card-btn { font: inherit; text-align: left; cursor: pointer; width: 100%; }
+  .today-card-btn:hover { border-color: var(--navy); }
+  .today-card-btn[aria-expanded="true"] { border-color: var(--navy); box-shadow: inset 0 0 0 1px var(--navy); }
+  .today-list { border: 1px solid var(--border); border-radius: var(--radius-lg, 10px); background: var(--white); padding: 10px 14px; margin: -6px 0 16px; }
+  .today-list-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .today-list-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 6px 0; border-top: 1px solid var(--gray-100, #f1f3f5); font-size: 12.5px; }
+  .readiness-check.rc-none { color: var(--gray-600, #555); }
+  .readiness-check.rc-none > span:first-child { color: var(--gray-400, #999); }
+
   .dup-alert details > summary { cursor: pointer; font-weight: 700; color: var(--navy); font-size: 12.5px; margin: 8px 0 2px; }
   .dup-alert details[open] > summary { margin-bottom: 10px; }
 }
@@ -1607,8 +1637,8 @@ button, input, select, textarea { font-family: var(--font-ui); }
   .page-header > div:last-child:not(:first-child) { display: flex; flex-wrap: wrap; gap: 8px; }
 
   /* To-do rows: badge and text on top, action underneath. */
-  .todo-row { grid-template-columns: auto 1fr !important; row-gap: 8px; }
-  .todo-row > :last-child { grid-column: 2; justify-self: start; }
+  .todo-row { grid-template-columns: auto 1fr !important; row-gap: 6px; }
+  .todo-row > .todo-when, .todo-row > :last-child { grid-column: 2; justify-self: start; }
 
   /* Wide tables scroll sideways; the first column (HMIS ID) stays in view. */
   .client-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--white); box-shadow: 1px 0 0 var(--border); }
@@ -1631,6 +1661,26 @@ button, input, select, textarea { font-family: var(--font-ui); }
   .ytd-kpi-grid, .housing-outcome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .ytd-kpi { padding: 12px; }
   .page-title { font-size: 24px; }
+}
+
+/* Typography (Nov 2026): frequently read labels at 12–13px; table headings
+   in sentence case; uppercase kept for short navigation group labels.
+   Tabular numerals are unchanged. Prefixed with #app so they hold over
+   styles added at runtime. */
+@media screen {
+  #app .client-table th, #app .svc-table th, #app .fiscal-payment-table th, #app .fiscal-budget-table th {
+    text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 700;
+  }
+  #app .ytd-kpi .label, #app .today-card .label, #app .fiscal-kpi .label, #app .generated-metric .label,
+  #app .mr-stat-label, #app .bed-stat-label, #app .sla-card-label, #app .cdbg-kpi-label, #app .exit-tile-label {
+    font-size: 12px; letter-spacing: .03em;
+  }
+  #app .fiscal-kpi .sub, #app .ytd-kpi .sub, #app .today-card .sub, #app .exit-tile-sub, #app .outcome-stat .sub,
+  #app .contract-goal-basis, #app .contract-goal-foot, #app .demo-dashboard-meta, #app .demo-dashboard-value,
+  #app .demo-bar-pct, #app .demo-mini .note, #app .census-asof {
+    font-size: 12px;
+  }
+  #app .badge { font-size: 11.5px; }
 }
 </style>
 
@@ -6025,48 +6075,86 @@ const App = {
   App.followUpLabel = function(f){ const st=this.followUpStatus(f); if(st==='complete') return 'Completed'; const d=this.daysUntil(f.due_date); if(d<0) return `${Math.abs(d)} days overdue`; if(d===0) return 'Due today'; return `Due in ${d} days`; };
   App.followUpsDueSoon = function(days=30){ return this.expectedFollowUps().filter(f=>this.followUpStatus(f)!=='complete' && this.daysUntil(f.due_date)<=days); };
 
+  // Week window used by "No service this week": today and the previous six
+  // calendar days. Future-dated services do not count.
+  App.serviceWeekWindow = function(){
+    const today=this.today(); const d=new Date(today+'T12:00:00'); d.setDate(d.getDate()-6);
+    return { start:this.localDate(d), end:today };
+  };
+
   App.renderTodayPanel = function(q=this.currentQuarter){
     const active=this.activeClientsNow();
     const due=this.followUpsDueSoon(30);
     const today=this.today();
-    const plannedExits=active.filter(c=>c.expected_exit_date && this.dateOnly(c.expected_exit_date)<=this.addMonthsDate(today,1));
+    const in30=this.addMonthsDate(today,1);
+    const plannedExits=active.filter(c=>c.expected_exit_date && this.dateOnly(c.expected_exit_date)<=in30);
     const stalePlans=active.filter(c=>!c.housing_plan_status || String(c.housing_plan_status).toLowerCase().includes('not'));
-    const serviceClients=new Set((this.data.clientServices||[]).filter(s=>this.daysUntil(this.dateOnly(s.service_date))>=-7).map(s=>s.client_id));
+    const wk=this.serviceWeekWindow();
+    const serviceClients=new Set((this.data.clientServices||[]).filter(s=>{ const d=this.dateOnly(s.service_date); return d && d>=wk.start && d<=wk.end; }).map(s=>s.client_id));
     const noRecent=active.filter(c=>!serviceClients.has(c.id));
+    const fmt=d=>this.formatDate(d);
     // "Current Residents" intentionally omitted here — it duplicates the
     // "Current Occupancy" KPI in the Live Census strip on the Dashboard.
+    // Each count opens the residents behind it.
     const cards=[
-      ['Follow-Ups Due', due.length, '6- and 12-month PH checks due in 30 days'],
-      ['Planned Exits', plannedExits.length, 'Expected exits within 30 days'],
-      ['Housing Plans Needed', stalePlans.length, 'Missing or not-started housing plans'],
-      ['No Service This Week', noRecent.length, 'Active clients with no service in last 7 days']
+      { key:'followups', label:'Follow-Ups Due', list:null, count:due.length, sub:'6- and 12-month PH checks due in 30 days' },
+      { key:'planned', label:'Planned Exits', list:plannedExits, count:plannedExits.length, sub:'Expected exits within 30 days',
+        detail:c=>`Expected ${fmt(this.dateOnly(c.expected_exit_date))}` },
+      { key:'plans', label:'Housing Plans Needed', list:stalePlans, count:stalePlans.length, sub:'Missing or not-started housing plans',
+        detail:c=>c.housing_plan_status||'No plan status' },
+      { key:'noservice', label:'No Service This Week', list:noRecent, count:noRecent.length, sub:`No service dated ${fmt(wk.start)} – ${fmt(wk.end)}`,
+        detail:c=>{ const last=(this.data.clientServices||[]).filter(s=>s.client_id===c.id && this.dateOnly(s.service_date)<=today).map(s=>this.dateOnly(s.service_date)).sort().pop(); return last?`Last service ${fmt(last)}`:'No service recorded'; } }
     ];
-    return `<div class="card" style="margin-bottom:18px;"><div class="card-header"><div><h2 class="card-title">Today</h2><div class="field-hint">Items that need attention.</div></div><button class="btn btn-ghost btn-sm" data-view-shortcut="housing-followups">View Follow-Ups</button></div><div class="card-body"><div class="today-grid">${cards.map(c=>`<div class="today-card"><div class="label">${this.escape(c[0])}</div><div class="value">${c[1]}</div><div class="sub">${this.escape(c[2])}</div></div>`).join('')}</div>${this.renderQuarterReadinessChecklist(q)}</div></div>`;
+    const card=c=>{
+      const body=`<div class="label">${this.escape(c.label)}</div><div class="value">${c.count}</div><div class="sub">${this.escape(c.sub)}</div>`;
+      if (c.key==='followups') return `<button type="button" class="today-card today-card-btn" data-view-shortcut="housing-followups" title="Open follow-ups">${body}</button>`;
+      if (!c.count) return `<div class="today-card">${body}</div>`;
+      return `<button type="button" class="today-card today-card-btn" data-today-toggle="${c.key}" aria-expanded="false" aria-controls="today-list-${c.key}" title="Show residents">${body}</button>`;
+    };
+    const lists=cards.filter(c=>c.list && c.count).map(c=>`<div class="today-list" id="today-list-${c.key}" data-today-list="${c.key}" hidden>
+        <div class="today-list-head"><strong>${this.escape(c.label)}</strong><span class="field-hint">${c.count} resident${c.count===1?'':'s'}</span></div>
+        ${c.list.map(x=>`<div class="today-list-row"><span><strong>${this.escape(this.clientDisplayId(x))}</strong> ${this.escape(this.clientName(x)||'')}</span><span class="field-hint">${this.escape(c.detail(x))}</span><button type="button" class="btn btn-ghost btn-sm" data-today-client="${this.escape(x.id)}">Open</button></div>`).join('')}
+      </div>`).join('');
+    return `<div class="card" style="margin-bottom:18px;"><div class="card-header"><div><h2 class="card-title">Today</h2><div class="field-hint">Items that need attention. Select a count to see the residents.</div></div><button class="btn btn-ghost btn-sm" data-view-shortcut="housing-followups">View Follow-Ups</button></div><div class="card-body"><div class="today-grid">${cards.map(card).join('')}</div>${lists}${this.renderQuarterReadinessChecklist(q)}</div></div>`;
   };
 
+  // Three states per check: done (✓), nothing to check this quarter (–), and
+  // a real discrepancy (⚠). A quarter with no turnover is not a warning.
   App.renderQuarterReadinessChecklist = function(q=this.currentQuarter){
     const {start,end}=this.qRange(q); const clients=this.data.clients||[];
+    const inQ=d=>d && d>=start && d<=end;
     const active=clients.filter(c=>this.clientStatus(c,end)==='Active');
-    const exits=clients.filter(c=>this.dateOnly(c.exit_date)>=start&&this.dateOnly(c.exit_date)<=end);
-    const svcs=(this.data.clientServices||[]).filter(s=>this.dateOnly(s.service_date)>=start&&this.dateOnly(s.service_date)<=end);
+    const served=clients.filter(c=>this.clientOverlaps ? this.clientOverlaps(c,start,end) : true);
+    const admits=clients.filter(c=>inQ(this.dateOnly(c.entry_date)));
+    const exits=clients.filter(c=>inQ(this.dateOnly(c.exit_date)));
+    const svcs=(this.data.clientServices||[]).filter(s=>inQ(this.dateOnly(s.service_date)));
     const narrative=(this.data.reports[q]?.narrative_text||'').trim();
-    const checks=[
-      ['Admissions entered', clients.some(c=>this.dateOnly(c.entry_date)>=start&&this.dateOnly(c.entry_date)<=end)],
-      ['Active residents have housing plan status', active.every(c=>!!c.housing_plan_status)],
-      ['Services recorded this quarter', svcs.length>0],
-      // exitStability() falls back to a derived value for every exited client,
-      // so testing it here was always true and told us nothing. Destination is
-      // the field staff actually have to fill in.
-      ['Exits include a destination', exits.every(c=>!!c.exit_destination_type)],
-      ['Narrative completed', narrative.split(/\s+/).filter(Boolean).length>=100]
-    ];
-    const passed=checks.filter(x=>x[1]).length;
+    const roster=(this.data.rosters||{})[q];
+    const num=v=>(v===null||v===undefined||v==='')?null:Number(v);
+    const rIn=num(roster?.intakes_count), rOut=num(roster?.exits_count);
+    const pl=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+    const checks=[];
+    // Admissions: compared with the HMIS roster when one is on file.
+    if (rIn!==null && rIn!==admits.length) checks.push(['warn', `Roster shows ${pl(rIn,'admission')}; ${admits.length} entered in the portal`]);
+    else if (!admits.length) checks.push(['none', '0 admissions this quarter']);
+    else checks.push(['ok', `${pl(admits.length,'admission')} entered`]);
+    if (!active.length) checks.push(['none', 'No active residents at quarter end']);
+    else { const missing=active.filter(c=>!c.housing_plan_status).length;
+      checks.push(missing ? ['warn', `${missing} of ${active.length} active residents have no housing plan status`] : ['ok','Active residents have housing plan status']); }
+    if (!served.length) checks.push(['none', 'No residents served, so no services expected']);
+    else checks.push(svcs.length ? ['ok', `${pl(svcs.length,'service')} recorded this quarter`] : ['warn', `No services recorded for ${pl(served.length,'resident')} served`]);
+    // exitStability() falls back to a derived value for every exited client,
+    // so destination is the field staff actually have to fill in.
+    const noDest=exits.filter(c=>!c.exit_destination_type).length;
+    if (rOut!==null && rOut!==exits.length) checks.push(['warn', `Roster shows ${pl(rOut,'exit')}; ${exits.length} entered in the portal`]);
+    else if (!exits.length) checks.push(['none', 'No exits to review']);
+    else checks.push(noDest ? ['warn', `${noDest} of ${pl(exits.length,'exit')} missing a destination`] : ['ok', `${pl(exits.length,'exit')}, all with a destination`]);
+    checks.push(narrative.split(/\s+/).filter(Boolean).length>=100 ? ['ok','Narrative completed'] : ['warn','Narrative not yet complete (100 words)']);
+    const warns=checks.filter(c=>c[0]==='warn').length;
+    const mark={ok:'✓',none:'–',warn:'⚠'}, sr={ok:'Complete: ',none:'Nothing to review: ',warn:'Needs attention: '};
     // Named "data entered" rather than "readiness": the drawer already has a
-    // Submission Readiness panel about whether documents have been submitted,
-    // and two panels both called readiness meant staff had to open both to
-    // work out which was which. This one is about whether the underlying
-    // records exist yet.
-    return `<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>Data entered this quarter</strong><span class="badge badge-${passed===checks.length?'green':'amber'}">${passed} of ${checks.length} complete</span></div>${checks.map(([label,ok])=>`<div class="readiness-check"><span aria-hidden="true">${ok?'✓':'⚠'}</span><span class="sr-only">${ok?'Complete: ':'Needs attention: '}</span><span>${this.escape(label)}</span></div>`).join('')}</div>`;
+    // Submission Readiness panel about whether documents have been submitted.
+    return `<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong>Data entered this quarter</strong><span class="badge badge-${warns?'amber':'green'}">${warns?`${warns} to review`:'All clear'}</span></div>${checks.map(([st,label])=>`<div class="readiness-check rc-${st}"><span aria-hidden="true">${mark[st]}</span><span class="sr-only">${sr[st]}</span><span>${this.escape(label)}</span></div>`).join('')}</div>`;
   };
 
   App.attentionItems = function(q=this.currentQuarter){
@@ -7419,32 +7507,26 @@ const App = {
     return { capacity, active, pending, open: Math.max(0, capacity-active.length), movedIn30, movedOut30, avgLos, longStay, noPlan, quiet, plannedExits };
   };
 
+  // Compact census: one line of figures and the bed strip. The flags that
+  // filter the list now sit in the filter row directly above the table.
   App.renderCensusPanel = function(){
     const s = this.censusSnapshot();
     const pct = s.capacity ? Math.round((s.active.length/s.capacity)*100) : 0;
     const openTone = s.open === 0 ? 'full' : s.open > s.capacity*0.25 ? 'low' : '';
     const beds = Array.from({length:s.capacity}, (_,i) => i < s.active.length ? 'filled' : 'open')
       .map(state=>`<span class="bed-pip ${state}"></span>`).join('');
-    const tiles = [
-      { label:'Beds occupied', value:`${s.active.length}<span class="census-of">/${s.capacity}</span>`, sub:`${pct}% of licensed capacity`, cls:'' },
-      { label:'Open beds', value:s.open, sub: s.open===0 ? 'at capacity' : s.open===1 ? '1 bed available now' : `${s.open} beds available now`, cls:`tile-open ${openTone}` },
-      { label:'Average stay', value:s.avgLos, sub:`days, current residents${s.longStay.length?` · ${s.longStay.length} over 180d`:''}`, cls:'' },
-      { label:'Moved in', value:s.movedIn30.length, sub:'last 30 days', cls:'' },
-      { label:'Moved out', value:s.movedOut30.length, sub:`last 30 days${s.plannedExits.length?` · ${s.plannedExits.length} planned`:''}`, cls:'' }
-    ];
-    const flags = [
-      s.noPlan.length ? { n:s.noPlan.length, label:`housing plan${s.noPlan.length===1?'':'s'} not started`, filter:'noplan' } : null,
-      s.quiet.length ? { n:s.quiet.length, label:`no contact in 14+ days`, filter:'quiet' } : null,
-      s.pending.length ? { n:s.pending.length, label:`scheduled intake${s.pending.length===1?'':'s'} not yet arrived`, filter:'pending' } : null
-    ].filter(Boolean);
-    return `<div class="card census-card"><div class="card-body">
-      <div class="census-head">
+    const stat = (v, l, cls='', title='') => `<span class="census-stat ${cls}"${title?` title="${this.escape(title)}"`:''}><strong>${v}</strong> ${l}</span>`;
+    return `<div class="card census-card census-compact"><div class="card-body">
+      <div class="census-line">
         <h2 class="census-title">Live census</h2>
-        <span class="census-asof">as of ${this.formatDate(this.today())}</span>
+        ${stat(`${s.active.length}<span class="census-of">/${s.capacity}</span>`, `beds occupied · ${pct}%`)}
+        ${stat(s.open, s.open===1?'open bed':'open beds', `tile-open ${openTone}`)}
+        ${stat(s.avgLos, 'day average stay', '', s.longStay.length ? `${s.longStay.length} over 180 days` : '')}
+        ${stat(s.movedIn30.length, 'moved in')}
+        ${stat(s.movedOut30.length, 'moved out')}
+        <span class="census-asof">last 30 days · as of ${this.formatDate(this.today())}</span>
       </div>
-      <div class="census-tile-row">${tiles.map(t=>`<div class="census-tile ${t.cls}"><div class="census-tile-label">${this.escape(t.label)}</div><div class="census-tile-value">${t.value}</div><div class="census-tile-sub">${this.escape(t.sub)}</div></div>`).join('')}</div>
       <div class="bed-strip" role="img" aria-label="${s.active.length} of ${s.capacity} beds occupied">${beds}</div>
-      ${flags.length ? `<div class="census-flags">${flags.map(fl=>`<button type="button" class="census-flag" data-census-filter="${fl.filter}"><strong>${fl.n}</strong> ${this.escape(fl.label)}</button>`).join('')}</div>` : '<div class="census-flags"><span class="census-flag-clear">No housing plans or contact gaps outstanding</span></div>'}
     </div></div>`;
   };
 
@@ -7487,19 +7569,27 @@ const App = {
       const part=this.clientParticipation(c);
       return `<tr><td><strong>${this.escape(this.clientDisplayId(c))}</strong></td><td>${this.escape(this.clientName(c))}</td><td>${this.statusBadge(this.simpleClientStatus(c).toLowerCase().replace(' ','-'))}</td><td>${this.escape(c.housing_plan_status||'—')}</td><td>${this.clientBedNights(c,this.dateOnly(c.entry_date),this.today()).toLocaleString()}</td><td>${this.formatDate(c.entry_date)}</td><td>${this.escape(c.room_assignment||'—')}${isDuplicate?' <span class="badge badge-amber">Duplicate</span>':''}</td><td><span class="badge ${part.cssClass}" title="${this.escape(part.hint||'')}">${this.escape(part.label)}</span></td><td><div class="client-actions"><button class="btn btn-ghost btn-sm" data-edit-client="${c.id}">Open</button><button class="btn btn-ghost btn-sm" data-add-service="${c.id}">Add Service</button>${this.programHas?.('has_beds') ? '' : `<button class="btn btn-ghost btn-sm" data-add-update="${c.id}">Add Update</button>`}</div></td></tr>`;
     }).join('') || `<tr><td colspan="9" class="empty-table-state">${activeRaw.length ? 'No residents match the current filter.' : 'No active client records entered yet.'}</td></tr>`;
-    const flagLabels = { all:'All residents', noplan:'Housing plan not started', quiet:'No contact in 14+ days', pending:'Scheduled intakes' };
+    const flagLabels = { all:'All residents', noplan:'Housing plan needed', quiet:'No contact in 14+ days', pending:'Scheduled intake' };
+    const snap = this.censusSnapshot();
+    const flagChips = [['noplan', snap.noPlan.length], ['quiet', snap.quiet.length], ['pending', snap.pending.length]]
+      .filter(([k, n]) => n || cf.flag === k)
+      .map(([k, n]) => `<button type="button" class="chip-toggle ${cf.flag===k?'active':''}" data-census-filter="${k}" aria-pressed="${cf.flag===k}">${this.escape(flagLabels[k])} <span class="chip-count">${n}</span></button>`).join('');
+    const noun = n => `${n} client${n===1?'':'s'}`;
+    const resultLabel = cf.flag !== 'all'
+      ? `<strong>${this.escape(flagLabels[cf.flag]||cf.flag)}</strong> · ${active.length} of ${noun(activeRaw.length)}`
+      : (term ? `${active.length} of ${noun(activeRaw.length)} match` : noun(activeRaw.length));
     el.innerHTML=`<div class="page-header"><div><h1 class="page-title">Active Caseload</h1><div class="page-subtitle">Client records feed quarterly reporting.</div></div><button class="btn btn-gold" id="btn-new-client">+ Add Client</button></div>
       ${this.renderCensusPanel()}
       ${duplicateNotice}
-      <div class="table-filter-row">
+      <div class="table-filter-row caseload-filter-row">
         <label class="sr-only" for="caseload-search">Search residents</label>
         <input id="caseload-search" class="field-input" type="search" placeholder="Search ID, name, room, or plan status" value="${this.escape(cf.q||'')}">
-        ${cf.flag!=='all' ? `<span class="chip-toggle active">${this.escape(flagLabels[cf.flag]||cf.flag)}</span>` : ''}
-        ${(cf.flag!=='all'||cf.q) ? '<button type="button" class="btn btn-ghost btn-sm" id="caseload-clear">Clear filters</button>' : ''}
-        <span class="filter-count">${active.length} of ${activeRaw.length} shown</span>
+        ${flagChips ? `<div class="caseload-flags" role="group" aria-label="Filter by flag">${flagChips}</div>` : ''}
+        <span class="filter-count" aria-live="polite">${resultLabel}</span>
+        ${(cf.flag!=='all'||cf.q) ? '<button type="button" class="btn btn-ghost btn-sm" id="caseload-clear">Clear filter</button>' : ''}
       </div>
       <div class="client-table-wrap"><table class="client-table"><thead><tr>${this.sortableHeader(this._caseloadSort,'hmis','HMIS ID')}${this.sortableHeader(this._caseloadSort,'name','Name')}${this.sortableHeader(this._caseloadSort,'status','Status')}${this.sortableHeader(this._caseloadSort,'housing','Housing Progress')}${this.sortableHeader(this._caseloadSort,'los','LOS')}${this.sortableHeader(this._caseloadSort,'entry','Entry')}${this.sortableHeader(this._caseloadSort,'room','Room / Bed')}${this.sortableHeader(this._caseloadSort,'participation','Participation')}<th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-    el.querySelectorAll('[data-census-filter]').forEach(b=>b.addEventListener('click',()=>{ cf.flag = b.dataset.censusFilter; this.renderClients(); }));
+    el.querySelectorAll('[data-census-filter]').forEach(b=>b.addEventListener('click',()=>{ cf.flag = cf.flag === b.dataset.censusFilter ? 'all' : b.dataset.censusFilter; this.renderClients(); }));
     el.querySelector('#caseload-clear')?.addEventListener('click',()=>{ cf.flag='all'; cf.q=''; this.renderClients(); });
     const csearch = el.querySelector('#caseload-search');
     if (csearch) {
@@ -9480,16 +9570,6 @@ const App = {
   };
   App.fiscalBlockingIssues = function(month=this.resolveFiscalMonth()){ return this.fiscalReconciliationChecks(month).filter(c=>c.severity==='error'); };
 
-  App.fiscalKpisHtml = function(){
-    const month=this.resolveFiscalMonth(), ytd=this.fiscalYtdTotal(month), official=this.fiscalOfficialTotal(), remaining=official-ytd, monthTotal=this.fiscalMonthTotal(month), pct=official?ytd/official:0, docs=this.fiscalDocsFor(month).length;
-    return `<div class="fiscal-kpis">
-      <div class="fiscal-kpi"><div class="label">FY27 Approved Budget</div><div class="value">${this.fiscalMoney(official)}</div><div class="sub">Published grand total</div></div>
-      <div class="fiscal-kpi"><div class="label">YTD Actuals</div><div class="value">${this.fiscalMoney(ytd)}</div><div class="sub">Through ${this.escape(this.fiscalMonthRecord(month)?.label||'selected month')}</div></div>
-      <div class="fiscal-kpi"><div class="label">Remaining</div><div class="value ${remaining<0?'fiscal-over':''}">${this.fiscalMoney(remaining)}</div><div class="sub">Against published grand total</div></div>
-      <div class="fiscal-kpi"><div class="label">Budget Spent</div><div class="value">${this.fiscalPct(pct)}</div><div class="sub">YTD</div></div>
-      <div class="fiscal-kpi"><div class="label">Current Invoice</div><div class="value">${this.fiscalMoney(monthTotal)}</div><div class="sub">${docs} backup file${docs===1?'':'s'} · ${this.fiscalStatus(month).replaceAll('_',' ')}</div></div>
-    </div>`;
-  };
 
 
   App.fiscalFormatBytes = function(n){ n=Number(n)||0; if(n<1024)return n+' B'; if(n<1048576)return (n/1024).toFixed(1)+' KB'; return (n/1048576).toFixed(1)+' MB'; };
@@ -18756,15 +18836,16 @@ const App = {
     const active = clients.filter(c => this.clientStatus(c) !== 'Exited');
     const byId = new Map(clients.map(c => [c.id, c]));
     const items = [];
-    const add = (level, text, cite, action, label) => items.push({ level, text, cite, action, label });
+    const add = (level, text, cite, action, label, target, due) => items.push({ level, text, cite, action, label, target, due: due || null });
+    const earliest = list => list.filter(Boolean).map(d => this.dateOnly(d)).sort()[0] || null;
 
     // Section 4 — referral clocks.
     const clocks = Object.values(this.data.referralClocks || {});
     const ackOpen = clocks.filter(k => ['open','due_today','overdue'].includes(k.ack_state));
     const detOpen = clocks.filter(k => ['open','due_today','overdue'].includes(k.det_state) && !ackOpen.includes(k));
     const late = list => list.filter(k => k.ack_state === 'overdue' || k.det_state === 'overdue').length;
-    if (ackOpen.length) add(late(ackOpen) ? 'late' : 'due', `${plural(ackOpen.length, 'referral')} to acknowledge${late(ackOpen) ? ` (${late(ackOpen)} overdue)` : ''}`, 'Section 4 · 1 business day', 'referrals', 'Open referrals');
-    if (detOpen.length) add(detOpen.some(k => k.det_state === 'overdue') ? 'late' : 'due', `${plural(detOpen.length, 'referral')} needing an admission decision or documented barrier`, 'Section 4 · 2 business days', 'referrals', 'Open referrals');
+    if (ackOpen.length) add(late(ackOpen) ? 'late' : 'due', `${plural(ackOpen.length, 'referral')} to acknowledge${late(ackOpen) ? ` (${late(ackOpen)} overdue)` : ''}`, 'Section 4 · 1 business day', 'referrals', ackOpen.length === 1 ? 'Open referral' : 'Open referrals', ackOpen.length === 1 ? { referral: ackOpen[0].referral_id } : null, earliest(ackOpen.map(k => k.ack_due)));
+    if (detOpen.length) add(detOpen.some(k => k.det_state === 'overdue') ? 'late' : 'due', `${plural(detOpen.length, 'referral')} needing an admission decision or documented barrier`, 'Section 4 · 2 business days', 'referrals', detOpen.length === 1 ? 'Open referral' : 'Open referrals', detOpen.length === 1 ? { referral: detOpen[0].referral_id } : null, earliest(detOpen.map(k => k.det_due)));
 
     // Data check — an exit with the bed still occupied.
     const openAfterExit = (this.data.stays || []).filter(s => !s.end_date && byId.get(s.client_id) && this.clientStatus(byId.get(s.client_id)) === 'Exited');
@@ -18778,7 +18859,7 @@ const App = {
     const unnotified = (this.data.bedStatus || []).filter(e => ['unavailable','held','released','pending_discharge'].includes(e.status) && !e.city_notified_at
       && this.latestBedEvent(e.bed_id)?.id === e.id);
     if (unnotified.length) add(unnotified.some(e => addDays(String(e.effective_at).slice(0, 10), 1) < today) ? 'late' : 'due',
-      `${plural(unnotified.length, 'bed status change')} not yet reported to the City`, 'Section 3.1 · 1 business day', 'beds', 'Open Bed Board');
+      `${plural(unnotified.length, 'bed status change')} not yet reported to the City`, 'Section 3.1 · 1 business day', 'beds', unnotified.length === 1 ? 'Open bed' : 'Open Bed Board', unnotified.length === 1 ? { bed: unnotified[0].bed_id } : null);
 
     // Section 3.2 — absences recorded without written approval are not billable.
     const absences = (this.data.absences || []).filter(a => !a.billing_approved);
@@ -18788,7 +18869,7 @@ const App = {
     const activeIds = new Set(active.map(c => c.id));
     const reviews = (this.data.planReviewDue || []).filter(r => activeIds.has(r.client_id) && r.next_review_due && this.dateOnly(r.next_review_due) <= soon);
     const overdueReviews = reviews.filter(r => this.dateOnly(r.next_review_due) < today);
-    if (reviews.length) add(overdueReviews.length ? 'late' : 'due', `${plural(reviews.length, 'housing plan review')} due${overdueReviews.length ? ` (${overdueReviews.length} overdue)` : ' this week'}`, 'Section 7.1 · every 30 days', 'clients', 'Open clients');
+    if (reviews.length) add(overdueReviews.length ? 'late' : 'due', `${plural(reviews.length, 'housing plan review')} due${overdueReviews.length ? ` (${overdueReviews.length} overdue)` : ' this week'}`, 'Section 7.1 · every 30 days', 'clients', reviews.length === 1 ? 'Open client' : 'Open clients', reviews.length === 1 ? { client: reviews[0].client_id } : null, earliest(reviews.map(r => r.next_review_due)));
 
     // Plans not on file. Section 14 counts completed plans toward 38.
     if (this.programHas('has_case_plan_tracking')) {
@@ -18799,7 +18880,7 @@ const App = {
     // Follow-ups due within two weeks.
     const fus = (this.data.housingFollowUps || []).filter(f => !f.completed_date && f.due_date && this.dateOnly(f.due_date) <= addDays(today, 14));
     const lateFus = fus.filter(f => this.dateOnly(f.due_date) < today);
-    if (fus.length) add(lateFus.length ? 'late' : 'due', `${plural(fus.length, 'follow-up')} due${lateFus.length ? ` (${lateFus.length} overdue)` : ' in the next two weeks'}`, 'Section 14 · retention', 'housing-followups', 'Open follow-ups');
+    if (fus.length) add(lateFus.length ? 'late' : 'due', `${plural(fus.length, 'follow-up')} due${lateFus.length ? ` (${lateFus.length} overdue)` : ' in the next two weeks'}`, 'Section 14 · retention', 'housing-followups', 'Open follow-ups', null, earliest(fus.map(f => f.due_date)));
 
     // Section 12.2 — monthly report due on the 15th.
     if (this.programHas('has_monthly_report')) {
@@ -18811,12 +18892,12 @@ const App = {
         const due = addDays(monthKey(addDays(m, 32)), 14);
         const st = statusOf(m);
         if (admin) {
-          if (st === 'submitted') add('due', `${monthName(m)} monthly report is waiting for City review`, 'Section 12.2', 'monthly', 'Review report');
+          if (st === 'submitted') add('due', `${monthName(m)} monthly report is waiting for City review`, 'Section 12.2', 'monthly', `Review ${monthName(m).split(' ')[0]} report`, { month: m }, null);
           return;
         }
         if (st === 'accepted' || st === 'submitted') return;
         const label = st === 'revision_requested' ? 'needs revision' : (due < today ? 'is overdue' : `is due ${this.formatDate(due)}`);
-        add(st === 'revision_requested' || due < today ? 'late' : 'due', `${monthName(m)} monthly report ${label}`, 'Section 12.2 · by the 15th', 'monthly', 'Open report');
+        add(st === 'revision_requested' || due < today ? 'late' : 'due', `${monthName(m)} monthly report ${label}`, 'Section 12.2 · by the 15th', 'monthly', `Open ${monthName(m).split(' ')[0]} report`, { month: m }, due);
       });
     }
 
@@ -18832,15 +18913,27 @@ const App = {
     const icon = { late:'badge-red', due:'badge-amber', info:'badge-gray' };
     const word = { late:'Overdue', due:'Due', info:'Note' };
     const card = document.createElement('div');
-    card.id = 'shelter-todos'; card.className = 'card'; card.style.margin = '0 0 16px';
-    card.innerHTML = `<div class="card-header"><div><strong>To do</strong>
-        <span class="field-hint" style="margin-left:6px">${items.length ? plural(items.length, 'item') : 'Nothing due'}</span></div></div>
-      <div class="card-body">${items.length ? `<div class="todo-list">${items.map((t, i) => `
-        <div class="todo-row">
+    card.id = 'shelter-todos'; card.className = 'card todo-card'; card.style.margin = '0 0 16px';
+    // One row per task: status, task, due date, action. The contract
+    // reference is secondary. With nothing due the card is a single line.
+    const today = this.localDate();
+    const dueText = t => {
+      if (!t.due) return '';
+      const d = this.dateOnly(t.due), when = this.formatDate(d);
+      if (d < today) return `<span class="todo-due is-late">Overdue since ${esc(when)}</span>`;
+      if (d === today) return `<span class="todo-due is-today">Due today</span>`;
+      return `<span class="todo-due">Due ${esc(when)}</span>`;
+    };
+    card.innerHTML = items.length
+      ? `<div class="card-header"><div><strong>To do</strong><span class="field-hint" style="margin-left:6px">${plural(items.length, 'item')}</span></div></div>
+        <div class="card-body"><div class="todo-list">${items.map((t, i) => `
+        <div class="todo-row todo-${t.level}">
           <span class="badge ${icon[t.level]}">${word[t.level]}</span>
-          <div class="todo-text">${esc(t.text)}<br><span class="field-hint">${esc(t.cite)}</span></div>
-          ${t.action ? `<button type="button" class="btn btn-ghost btn-sm" data-todo="${i}">${esc(t.label)}</button>` : ''}
-        </div>`).join('')}</div>` : '<div class="field-hint">All caught up.</div>'}</div>`;
+          <div class="todo-text"><span class="todo-task">${esc(t.text)}</span><span class="todo-cite">${esc(t.cite)}</span></div>
+          <div class="todo-when">${dueText(t)}</div>
+          ${t.action ? `<button type="button" class="btn ${t.level === 'late' ? 'btn-primary' : 'btn-ghost'} btn-sm" data-todo="${i}">${esc(t.label)}</button>` : '<span></span>'}
+        </div>`).join('')}</div></div>`
+      : `<div class="card-body todo-empty"><strong>To do</strong><span class="field-hint">Nothing due</span></div>`;
     const header = el.querySelector('.page-header');
     header ? header.after(card) : el.prepend(card);
     card.querySelectorAll('[data-todo]').forEach(b => b.addEventListener('click', async () => {
@@ -18858,8 +18951,18 @@ const App = {
         this.renderDashboard();
         return;
       }
-      this.showView(t.action);
+      this.openTodoTarget(t);
     }));
+  };
+
+  // A task that names one record opens that record, not just its screen.
+  App.openTodoTarget = function(t){
+    const g = t.target || {};
+    if (g.month) this._monthlyMonth = g.month;
+    this.showView(t.action);
+    if (g.referral && this.openReferralDetail) this.openReferralDetail(g.referral);
+    else if (g.bed && this.openBedPanel) this.openBedPanel(g.bed);
+    else if (g.client && this.openClientForm) this.openClientForm(g.client);
   };
 
   const previousRenderDashboard = App.renderDashboard;
@@ -18874,7 +18977,17 @@ const App = {
   const css = document.createElement('style');
   css.textContent = `
     .todo-list { display:flex; flex-direction:column; }
-    .todo-row { display:grid; grid-template-columns:80px 1fr auto; gap:12px; align-items:center; padding:10px 0; border-top:1px solid var(--gray-100, #f3f4f6); }
+    .todo-row { display:grid; grid-template-columns:80px minmax(0,1fr) auto auto; gap:14px; align-items:center; padding:9px 0; border-top:1px solid var(--gray-100, #f3f4f6); }
+    .todo-row:first-child { border-top:0; padding-top:2px; }
+    .todo-task { font-size:14px; color:var(--gray-800, #1f2937); }
+    .todo-late .todo-task { font-weight:700; color:var(--navy); }
+    .todo-cite { display:block; font-size:11.5px; color:var(--gray-400, #9ca3af); margin-top:1px; }
+    .todo-when { white-space:nowrap; }
+    .todo-due { font-size:13px; font-weight:600; color:var(--gray-600, #4b5563); font-variant-numeric:tabular-nums; }
+    .todo-due.is-late { color:var(--red, #b42318); font-weight:700; }
+    .todo-due.is-today { color:#7A5200; font-weight:700; }
+    .todo-card .card-header { padding-top:12px; padding-bottom:12px; }
+    .todo-empty { display:flex; align-items:baseline; gap:10px; padding:12px 20px !important; }
     .todo-row:first-child { border-top:0; }
     .todo-row .badge { justify-self:start; }`;
   document.head.appendChild(css);
@@ -19934,21 +20047,6 @@ const App = {
   };
 
   /* ------------------------------------------------------- agency screens */
-  const baseKpis = App.fiscalKpisHtml;
-  App.fiscalKpisHtml = function(){
-    if (!this.fiscalIsAdvance()) return baseKpis.call(this);
-    const month = this.resolveFiscalMonth(), budget = this.fiscalOfficialTotal(), ytd = this.fiscalYtdTotal(month);
-    const advanced = this.fiscalAdvancedThrough(), unspent = advanced - ytd, cur = this.fiscalMonthTotal(month);
-    const docs = this.fiscalDocsFor(month).length, label = this.fiscalMonthRecord(month)?.label || 'selected month';
-    const k = (l, v, sub, cls = '') => `<div class="fiscal-kpi"><div class="label">${l}</div><div class="value ${cls}">${v}</div><div class="sub">${sub}</div></div>`;
-    return `<div class="fiscal-kpis">
-      ${k('Advance budget', this.fiscalMoney(budget), '10 reserved beds')}
-      ${k('Advances received', this.fiscalMoney(advanced), budget ? this.fiscalPct(advanced / budget) + ' of budget' : '')}
-      ${k('Expenses to date', this.fiscalMoney(ytd), 'Through ' + esc(label))}
-      ${k('Unspent advance', this.fiscalMoney(unspent), unspent < 0 ? 'Expenses exceed advances' : 'Advances minus expenses', unspent < 0 ? 'fiscal-over' : '')}
-      ${k('This month', this.fiscalMoney(cur), `${docs} file${docs === 1 ? '' : 's'} · ${esc(this.fiscalStatus(month).replaceAll('_', ' '))}`)}
-    </div>`;
-  };
 
   const baseChecks = App.fiscalReconciliationChecks;
   App.fiscalReconciliationChecks = function(month = this.resolveFiscalMonth()){
@@ -19964,9 +20062,11 @@ const App = {
       if (c.label === 'Monthly expense detail') return { ...c, detail: `This month: ${this.fiscalMoney(this.fiscalMonthTotal(month))}`, fix: c.severity === 'ok' ? c.fix : 'Enter this month’s expenses before submitting.' };
       return c;
     });
-    const ytd = this.fiscalYtdTotal(month), advanced = this.fiscalAdvancedThrough();
+    // Month-end on both sides, matching the screen header and the printed report.
+    const ytd = this.fiscalYtdTotal(month), advanced = this.fiscalAdvancedThrough(month);
+    const mon = String(this.fiscalMonthRecord(month)?.label || 'this month').split(' ')[0];
     out.push({ label: 'Advance balance', severity: ytd > advanced + 0.005 ? 'warning' : 'ok',
-      detail: `Advances received ${this.fiscalMoney(advanced)} · expenses through this month ${this.fiscalMoney(ytd)} · unspent ${this.fiscalMoney(advanced - ytd)}`,
+      detail: `Advances through ${mon} ${this.fiscalMoney(advanced)} · expenses through ${mon} ${this.fiscalMoney(ytd)} · unspent ${this.fiscalMoney(advanced - ytd)}`,
       fix: ytd > advanced + 0.005 ? 'Expenses are ahead of the advance. The City may release the next advance after review.' : 'No action needed.' });
     return out;
   };
@@ -22339,6 +22439,21 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('nav-open')) setNav(false); });
   window.matchMedia?.('(min-width: 801px)').addEventListener?.('change', (m) => { if (m.matches) setNav(false); });
 
+  // Today panel counts: show or hide the residents behind a count.
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-today-toggle]');
+    if (t) {
+      const key = t.dataset.todayToggle, list = document.querySelector(`[data-today-list="${key}"]`);
+      const open = !!list && list.hidden;
+      document.querySelectorAll('[data-today-list]').forEach(l => { l.hidden = true; });
+      document.querySelectorAll('[data-today-toggle]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+      if (list && open) { list.hidden = false; t.setAttribute('aria-expanded', 'true'); }
+      return;
+    }
+    const c = e.target.closest('[data-today-client]');
+    if (c) App.openClientForm(c.dataset.todayClient);
+  });
+
   // Client statuses share the report-status badge, where anything unrecognised
   // was amber. Active participants are the normal case, so they read green.
   const baseBadge = App.statusBadge;
@@ -22358,6 +22473,95 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
     return html.replace(/(<div class="dup-alert-sub">[\s\S]*?<\/div>)/,
       `$1<details><summary>Show ${groups} groups to review</summary>`).replace(/<\/div>\s*$/, '</details></div>');
   };
+})();
+
+/* ==========================================================================
+   Fiscal Reporting header (Nov 2026)
+   The selected month and its status lead, then the month-end reconciliation
+   in reading order with the balance largest. The annual budget moves to a
+   secondary line. Advances are counted through the same month-end as
+   expenses, so the screen agrees with the printed report.
+   ========================================================================== */
+(function(){
+  const esc = s => App.escape(s ?? '');
+  App.fiscalKpisHtml = function(){
+    const month = this.resolveFiscalMonth();
+    const rec = this.fiscalMonthRecord(month) || {};
+    const label = rec.label || 'Selected month', mon = String(label).split(' ')[0];
+    const status = this.fiscalStatus(month), docs = this.fiscalDocsFor(month).length;
+    const ytd = this.fiscalYtdTotal(month), cur = this.fiscalMonthTotal(month);
+    const money = v => this.fiscalMoney(v);
+    const item = (l, v, cls = '') => `<div class="fr-item ${cls}"><div class="fr-label">${l}</div><div class="fr-value">${v}</div></div>`;
+    const advance = this.fiscalIsAdvance?.();
+    let title, a, b, result, foot;
+    if (advance) {
+      const advanced = this.fiscalAdvancedThrough(month), budget = this.fiscalOfficialTotal(), unspent = advanced - ytd;
+      title = `${label} expense report`;
+      a = item(`Advances through ${mon}`, money(advanced));
+      b = item(`Expenses through ${mon}`, money(ytd));
+      result = item(unspent < 0 ? 'Expenses above advances' : 'Unspent advance', money(Math.abs(unspent)), `fr-balance${unspent < 0 ? ' fiscal-over' : ''}`);
+      foot = [`Annual advance budget ${money(budget)} (10 reserved beds)`, budget ? `${this.fiscalPct(advanced / budget)} advanced` : '',
+              `${label} expenses ${money(cur)}`, `${docs} backup file${docs === 1 ? '' : 's'}`];
+    } else {
+      const official = this.fiscalOfficialTotal(), remaining = official - ytd;
+      title = `${label} invoice`;
+      a = item('Approved budget', money(official));
+      b = item(`Actuals through ${mon}`, money(ytd));
+      result = item('Remaining budget', money(remaining), `fr-balance${remaining < 0 ? ' fiscal-over' : ''}`);
+      foot = [official ? `${this.fiscalPct(ytd / official)} of budget spent` : '', `${label} invoice ${money(cur)}`, `${docs} backup file${docs === 1 ? '' : 's'}`];
+    }
+    return `<div class="fiscal-period">
+      <div class="fiscal-period-head"><h2 class="fiscal-period-title">${esc(title)}</h2>${this.fiscalStatusBadge(status)}</div>
+      <div class="fiscal-recon">${a}<div class="fr-op" aria-hidden="true">−</div>${b}<div class="fr-op" aria-hidden="true">=</div>${result}</div>
+      <div class="fiscal-period-foot">${foot.filter(Boolean).map(esc).join(' · ')}</div>
+    </div>`;
+  };
+  const css = document.createElement('style');
+  css.textContent = `
+    #view-fiscal:has(.fiscal-period) .page-header > .badge { display:none; }
+    .fiscal-period { background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding:18px 22px; margin-bottom:18px; }
+    .fiscal-period-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .fiscal-period-title { margin:0; font-size:20px; font-weight:800; color:var(--navy); letter-spacing:-.01em; }
+    .fiscal-recon { display:flex; align-items:flex-end; gap:14px 18px; flex-wrap:wrap; }
+    .fr-item { min-width:0; }
+    .fr-label { font-size:12.5px; font-weight:600; color:var(--gray-600,#4b5563); }
+    .fr-value { margin-top:4px; font-size:22px; font-weight:750; color:var(--navy); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+    .fr-balance .fr-value { font-size:32px; font-weight:800; }
+    .fr-balance.fiscal-over .fr-value { color:var(--red, #b42318); }
+    .fr-op { font-size:20px; color:var(--gray-400); padding-bottom:4px; }
+    .fiscal-period-foot { margin-top:12px; padding-top:10px; border-top:1px solid var(--gray-100,#f1f3f5); font-size:12.5px; color:var(--gray-600,#4b5563); font-variant-numeric:tabular-nums; }
+    @media (max-width:640px){ .fr-op { display:none; } .fiscal-recon { display:grid; grid-template-columns:1fr 1fr; } .fr-balance { grid-column:1/-1; } }`;
+  document.head.appendChild(css);
+})();
+
+/* Table headings in sentence case. Headings are written in Title Case across
+   many screens; this lowers capitalised words after the first while keeping
+   acronyms, numbers and proper names. Display only: the underlying text that
+   exports and filters read is the same words. */
+(function(){
+  const KEEP = new Set(['City','Ascencia','Holloway','Glendale','West','Hollywood','Homekey','Measure','LACAHSA',
+    'January','February','March','April','May','June','July','August','September','October','November','December','I','PH','Q1','Q2','Q3','Q4']);
+  const sc = (text, first) => text.replace(/[A-Za-z][A-Za-z'’]*/g, (w, off) => {
+    if (first.done === false) { first.done = true; return w; }
+    if (KEEP.has(w) || w === w.toUpperCase() || !/^[A-Z][a-z'’]+$/.test(w)) return w;
+    return w.toLowerCase();
+  });
+  const fix = (root) => {
+    root.querySelectorAll?.('#app table.client-table th:not([data-sc]), #app table.svc-table th:not([data-sc]), #app table.fiscal-payment-table th:not([data-sc]), #app table.fiscal-budget-table th:not([data-sc])').forEach(th => {
+      th.dataset.sc = '1';
+      const first = { done:false };
+      const walker = document.createTreeWalker(th, NodeFilter.SHOW_TEXT);
+      let n; while ((n = walker.nextNode())) { if (n.parentElement?.closest('.sr-only, .sort-ind')) continue; if (n.nodeValue.trim()) n.nodeValue = sc(n.nodeValue, first); }
+    });
+  };
+  let queued = false;
+  const run = () => { queued = false; fix(document); };
+  const start = () => {
+    const app = document.getElementById('app'); if (!app) return;
+    new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(run); } }).observe(app, { childList:true, subtree:true });
+    run();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 
 document.addEventListener('DOMContentLoaded', () => App.init());
