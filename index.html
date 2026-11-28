@@ -22262,7 +22262,6 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
     const clients = this.data.clients || [];
     const served = clients.filter(c => this.clientOverlaps(c, s, e));
     const exitedInMonth = clients.filter(c => { const d = this.dateOnly(c.exit_date); return d && d >= s && d <= e; });
-    const activeNow = clients.filter(c => this.clientStatus(c, asOf) === 'Active');
     const beds = this.programHas('has_beds');
     const stays = this.data.stays || [];
     const openStay = id => stays.find(x => x.client_id === id && !x.end_date);
@@ -22285,8 +22284,11 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
     ];
     if (beds) {
       checks.splice(2, 0,
-        { key:'no-bed', label:'Active with no bed assigned', why:'Bed nights are not counted for this participant.',
-          list: activeNow.filter(c => !openStay(c.id)) },
+        // The portal holds open bed stays only, so this is checked against
+        // who is active today. Checking a past month-end flagged everyone who
+        // has since exited, because their stay has since closed.
+        { key:'no-bed', label:'Active today with no bed assigned', why:'Bed nights are not counted for this participant.',
+          list: clients.filter(c => this.clientStatus(c, today) === 'Active' && !openStay(c.id)) },
         { key:'open-stay', label:'Exited but still holding a bed', why:'The bed shows as occupied and keeps counting nights.',
           list: clients.filter(c => this.dateOnly(c.exit_date) && this.dateOnly(c.exit_date) <= today && openStay(c.id)) });
     }
