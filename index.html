@@ -38,7 +38,7 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: var(--font-sans); background: #F4F2EE; color: var(--gray-800); min-height: 100vh; font-size: 14px; line-height: 1.6; }
-button, input, select, textarea { font-family: var(--font-sans); }
+
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid rgba(201,162,74,.45); outline-offset: 2px; }
 
 .loading-screen, #login-screen { position: fixed; inset: 0; background: var(--navy); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; color: var(--white); }
@@ -46,8 +46,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .login-card { background: var(--white); color: var(--gray-800); border-radius: 12px; width: 100%; max-width: 410px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.35); }
 .login-header { background: var(--navy); padding: 28px 32px; text-align: center; border-bottom: 3px solid var(--gold); }
-.login-logo, .weho-emblem, .user-avatar { background: var(--gold); color: var(--navy); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
-.login-logo { width: 52px; height: 52px; margin: 0 auto 14px; font-family: var(--font-sans); font-size: 22px; }
+.user-avatar { background: var(--gold); color: var(--navy); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
 .login-logo-img { display:block; width:auto; max-width: 190px; max-height: 70px; height:auto; object-fit:contain; margin: 0 auto 16px; border-radius: 4px; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
 .loading-logo-img { display:block; width:auto; max-width: 170px; max-height: 62px; height:auto; object-fit:contain; border-radius: 4px; box-shadow: 0 8px 28px rgba(0,0,0,.25); }
 .login-title { font-family: var(--font-sans); font-size: 24px; font-weight: 600; color: var(--white); letter-spacing: -.01em; }
@@ -60,7 +60,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .topbar { background: var(--navy); color: var(--white); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; height: 58px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.18); }
 .topbar-brand { display: flex; align-items: center; gap: 14px; }
-.weho-emblem { width: 34px; height: 34px; font-family: var(--font-sans); }
+
 .weho-logo-header { display:block; width:auto; max-width: 132px; max-height: 30px; height:auto; object-fit:contain; border-radius: 3px; }
 .print-logo { display:block; width:auto; max-width: 180px; max-height: 66px; height:auto; object-fit:contain; margin-bottom:12px; border-radius:3px; }
 .print-footer-logo { display:block; width:auto; max-width: 96px; max-height: 34px; height:auto; object-fit:contain; opacity:.85; margin-bottom:6px; border-radius:2px; }
@@ -115,7 +115,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); }
 .card-header { padding:18px 22px 14px; border-bottom:1px solid var(--gray-100); display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .card-title { font-family: var(--font-sans); font-size:20px; font-weight:600; color:var(--navy); }
-.card-body { padding:22px; }
+
 .kpi-row { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; margin-bottom:20px; }
 .kpi-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; box-shadow:var(--shadow); border-left:3px solid var(--navy); }
 .kpi-card.gold { border-left-color:var(--gold); background:linear-gradient(135deg, #fffdf7 0%, var(--white) 60%); }
@@ -137,13 +137,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .content-grid { display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:24px; }
 .section-label { font-size:11.5px; font-weight:600; letter-spacing:.03em; color:var(--gray-400); margin-bottom:12px; }
-.readiness-row, .submission-row { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:15px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:var(--shadow); margin-bottom:10px; }
+.readiness-row { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:15px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:var(--shadow); margin-bottom:10px; }
 .readiness-left { display:flex; align-items:center; gap:12px; }
 .status-icon { font-size:18px; }
-.progress-item { margin-bottom:14px; }
-.progress-meta { display:flex; justify-content:space-between; margin-bottom:5px; font-size:12.5px; }
-.progress-track { height:6px; background:var(--gray-200); border-radius:3px; overflow:hidden; }
-.progress-fill { height:100%; background:var(--navy); border-radius:3px; }
 
 .view-section { display:none; }
 .view-section.active { display:block; }
@@ -221,17 +217,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .confirm-card .card-body { padding:22px; }
 
 .print-report { display:none; }
-.print-header { border-bottom:3px solid var(--gold); padding-bottom:14px; margin-bottom:18px; }
+
 .print-title { font-family: var(--font-sans); color:var(--navy); font-size:30px; font-weight:600; }
 .print-section { margin:22px 0; page-break-inside:avoid; break-inside:avoid; }
 .print-section h2 { color:var(--navy); font-family: var(--font-sans); font-size:18px; margin-bottom:8px; }
 .print-table { width:100%; border-collapse:collapse; font-size:11px; margin-top:6px; }
 .print-table th { background:#1B2F5B; color:white; text-align:left; padding:7px 6px; border:1px solid #1B2F5B; }
 .print-table td { border:1px solid #d8d5ce; padding:6px; vertical-align:top; }
-.print-table tbody tr:nth-child(even) td { background:#F7F6F2; }
-.print-table tbody tr:nth-child(odd) td { background:#FFFFFF; }
-.print-table td:nth-child(even) { background-color:#FBFAF7; }
-.print-table tbody tr:nth-child(even) td:nth-child(even) { background:#EFEDE7; }
+
+
+
+
 .print-table .print-total-row td { background:#EEF2FA !important; color:#1B2F5B; font-weight:800; border-top:2px solid #1B2F5B; }
 .print-table .print-subhead td { background:#E8E2D2 !important; color:#1B2F5B; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
 .print-table .print-ytd-cell,
@@ -247,17 +243,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   color:#FFFFFF !important;
   border-color:#314875 !important;
 }
-.print-table tbody tr:nth-child(even) td { background:#F7F6F2; }
-.print-table tbody tr:nth-child(odd) td { background:#FFFFFF; }
-.print-table tbody tr:nth-child(even) td.print-ytd-cell,
-.print-table tbody tr:nth-child(even) td:last-child.print-ytd-auto,
-.print-table.print-ytd-table tbody tr:nth-child(even) td:last-child { background:#E4EAF7 !important; }
-.print-table tbody tr:nth-child(odd) td.print-ytd-cell,
-.print-table tbody tr:nth-child(odd) td:last-child.print-ytd-auto,
-.print-table.print-ytd-table tbody tr:nth-child(odd) td:last-child { background:#EEF2FA !important; }
+
+
+.print-table tbody tr:nth-child(even) td.print-ytd-cell, .print-table.print-ytd-table tbody tr:nth-child(even) td:last-child { background:#E4EAF7 !important; }
+.print-table tbody tr:nth-child(odd) td.print-ytd-cell, .print-table.print-ytd-table tbody tr:nth-child(odd) td:last-child { background:#EEF2FA !important; }
 .print-table .print-total-row td.print-ytd-cell,
 .print-table.print-ytd-table .print-total-row td:last-child { background:#DDE6F6 !important; }
-.page-break { page-break-before:always; break-before:page; }
 
 .print-cover { display:grid; grid-template-columns: 1.4fr .8fr; gap:18px; align-items:start; margin-bottom:18px; }
 .print-brand { border:1px solid #d8d5ce; border-top:6px solid #1B2F5B; padding:18px; border-radius:8px; }
@@ -269,7 +260,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .print-footer { margin-top:28px; padding-top:8px; border-top:1px solid #ddd; font-size:10px; color:#666; }
 .print-summary-strip { display:flex; gap:14px; flex-wrap:wrap; border:1px solid #d8d5ce; background:#F7F6F2; border-left:5px solid #C9A24A; border-radius:8px; padding:9px 12px; margin:-8px 0 18px; font-size:11px; color:#3A3733; }
 .print-summary-strip span { margin-right:8px; }
-
 
 .goal-list { display:grid; gap:12px; }
 .goal-row { border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; background:var(--white); }
@@ -286,35 +276,24 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .check-row:nth-child(even) { background:var(--gray-100); }
 .narrative-word-count { display:flex; justify-content:space-between; gap:10px; margin-top:6px; font-size:11.5px; color:var(--gray-500); }
 .narrative-word-count.good { color:var(--green); font-weight:700; }
-.print-progress-table td:nth-child(even), .print-progress-table th:nth-child(even) { background:#F7F6F2; }
-.print-progress-bar { height:7px; background:#E0DDD5; border-radius:8px; overflow:hidden; min-width:90px; }
-.print-progress-fill { height:100%; background:#C9A24A; border-radius:8px; }
-
 
 /* Client-based program management additions */
-.client-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+
 .client-table-wrap{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:auto}
 .client-table{width:100%;border-collapse:collapse;font-size:12.5px}
 .client-table th{background:var(--navy);color:white;text-align:left;padding:9px 10px;font-size:11px;letter-spacing:.03em;text-transform:uppercase}
 .client-table td{padding:9px 10px;border-bottom:1px solid var(--gray-100);vertical-align:top}
 .client-table tbody tr:nth-child(even) td{background:#FBFAF7}
 .client-actions{display:flex;gap:6px;flex-wrap:wrap}
-.room-board{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px}
-.room-card{border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;background:var(--white);box-shadow:var(--shadow);min-height:98px}
-.room-card.occupied{border-left:4px solid var(--green)}
-.room-card.vacant{border-left:4px solid var(--gold);background:#fffdf7}
-.room-card.pending{border-left:4px solid var(--amber)}
-.room-num{font-size:11px;font-weight:900;color:var(--gray-400);text-transform:uppercase;letter-spacing:.06em}
-.room-name{font-weight:800;color:var(--navy);margin-top:5px}
-.room-meta{font-size:11.5px;color:var(--gray-600);margin-top:4px}
+
 .client-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .client-form-grid .full{grid-column:1/-1}
 .generated-metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .generated-metric{border:1px solid var(--border);border-left:3px solid var(--navy);border-radius:var(--radius-lg);background:white;padding:14px;box-shadow:var(--shadow)}
 .generated-metric .label{font-size:10.5px;color:var(--gray-400);font-weight:800;text-transform:uppercase;letter-spacing:.05em}
 .generated-metric .value{font-size:28px;color:var(--navy);font-weight:800;margin-top:2px}
-@media(max-width:980px){.room-board{grid-template-columns:repeat(2,1fr)}.generated-metric-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:620px){.room-board,.generated-metric-grid,.client-form-grid{grid-template-columns:1fr}}
+@media(max-width:980px){.generated-metric-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.generated-metric-grid, .client-form-grid {grid-template-columns:1fr}}
 
 @media (max-width: 800px) {
   .weho-logo-header { max-width: 112px; max-height: 26px; }
@@ -341,8 +320,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 
 /* v3 additions: word-count gauge, totals reconciliation, sortable headers, roster pager, sr-only, focus styles */
-.word-gauge-wrap { display:flex; align-items:center; gap:10px; margin-top:8px; }
-.word-gauge { flex:1; height:8px; background:var(--gray-200); border-radius:8px; overflow:hidden; position:relative; }
+
 .word-gauge-fill { height:100%; border-radius:8px; transition:width .25s ease, background-color .25s ease; }
 .word-gauge-fill.amber { background:var(--amber); }
 .word-gauge-fill.green { background:var(--green); }
@@ -362,8 +340,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .narrative-section-foot { display:flex; justify-content:flex-end; margin-top:6px; font-size:12px; }
 .narrative-word-count { color:var(--gray-400); }
 .narrative-word-count.ok { color:var(--green); font-weight:600; }
-.narrative-rough-notes { background:var(--off-white); border:1px dashed var(--gray-400); margin-bottom:10px; }
-.narrative-rough-notes-label { font-size:11.5px; font-weight:700; color:var(--gray-600); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; display:block; }
+
 .demo-recon { display:flex; flex-wrap:wrap; gap:14px; padding:9px 12px; border-radius:var(--radius); margin-bottom:10px; font-size:12.5px; align-items:center; }
 .demo-recon.ok { background:var(--green-light); border:1px solid #9FD4B5; color:#1A5735; }
 .demo-recon.warn { background:var(--amber-light); border:1px solid #F0C96B; color:#7A5200; }
@@ -380,8 +357,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .sidebar-item .count-badge { margin-left:auto; background:var(--gold); color:var(--navy); border-radius:10px; padding:1px 8px; font-size:11px; font-weight:800; }
 .roster-pager { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; font-size:12.5px; color:var(--gray-600); }
 .roster-pager .pager-controls { display:flex; gap:6px; }
-.autosave-indicator { font-size:11.5px; color:var(--gray-600); margin-left:8px; }
-.autosave-indicator.saved { color:var(--green); }
 
 /* v3 print improvements */
 @media print {
@@ -396,15 +371,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 .print-page-header { display:none; }
 
-
 /* Report-quality export upgrades */
-.print-section h3 { color:#1B2F5B; font-size:13px; margin:12px 0 6px; }
-.print-table tbody tr:nth-child(even) td { background:#F7F6F2; }
-.print-table tbody tr:nth-child(odd) td { background:#FFFFFF; }
+
+
+
 .print-table td:nth-child(even) { background-color:#FBFAF7; }
 .print-table tbody tr:nth-child(even) td:nth-child(even) { background:#EFEDE7; }
 .print-kpis { grid-template-columns: repeat(5,1fr); }
-.print-section.print-first { page-break-before:auto; }
 
 
 /* Final mapped PDF report structure */
@@ -417,12 +390,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .print-kpis.kpi-seven { grid-template-columns: repeat(7, 1fr); }
 }
 
-
 /* Usability / program-management additions */
 .today-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
 .today-card{background:white;border:1px solid var(--border);border-left:4px solid var(--gold);border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow)}
-.today-card .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-400);font-weight:800}.today-card .value{font-size:26px;font-weight:800;color:var(--navy);line-height:1.1;margin-top:4px}.today-card .sub{font-size:11.5px;color:var(--gray-600);margin-top:3px}.quick-service-bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.quick-chip{border:1px solid var(--border);background:white;color:var(--navy);border-radius:999px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer}.quick-chip:hover{background:#EEF2FA;border-color:var(--navy)}.task-list{display:grid;gap:8px}.task-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:white}.task-row:nth-child(even){background:#FBFAF7}.progress-pill{height:9px;background:var(--gray-200);border-radius:99px;overflow:hidden;min-width:110px}.progress-pill span{display:block;height:100%;background:var(--gold);border-radius:99px}.readiness-check{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);background:white;margin-bottom:7px}.followup-status{font-size:11px;border-radius:999px;padding:2px 8px;font-weight:800}.followup-status.due{background:var(--amber-light);color:var(--amber)}.followup-status.overdue{background:var(--red-light);color:var(--red)}.followup-status.complete{background:var(--green-light);color:var(--green)}@media(max-width:980px){.today-grid{grid-template-columns:1fr 1fr}.today-card .value{font-size:22px}}@media(max-width:620px){.today-grid{grid-template-columns:1fr}}
-
+.today-card .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-400);font-weight:800}.today-card .value{font-size:26px;font-weight:800;color:var(--navy);line-height:1.1;margin-top:4px}.today-card .sub{font-size:11.5px;color:var(--gray-600);margin-top:3px}.quick-service-bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.quick-chip{border:1px solid var(--border);background:white;color:var(--navy);border-radius:999px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer}.quick-chip:hover{background:#EEF2FA;border-color:var(--navy)}.readiness-check{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);background:white;margin-bottom:7px}.followup-status{font-size:11px;border-radius:999px;padding:2px 8px;font-weight:800}.followup-status.due{background:var(--amber-light);color:var(--amber)}.followup-status.overdue{background:var(--red-light);color:var(--red)}.followup-status.complete{background:var(--green-light);color:var(--green)}@media(max-width:980px){.today-grid{grid-template-columns:1fr 1fr}.today-card .value{font-size:22px}}@media(max-width:620px){.today-grid{grid-template-columns:1fr}}
 
 /* Final print pagination polish: avoid awkward single-table/page breaks. */
 @media print {
@@ -430,7 +401,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .print-cover { page-break-after: auto !important; break-after: auto !important; }
   .print-section { page-break-before: auto !important; break-before: auto !important; page-break-inside: auto !important; break-inside: auto !important; margin: 14px 0 !important; }
   .print-section.print-first { page-break-before: auto !important; break-before: auto !important; }
-  .print-section.page-break { page-break-before: auto !important; break-before: auto !important; }
+  
   .print-kpis, .print-summary-strip { page-break-inside: avoid !important; break-inside: avoid !important; }
   .print-section h2, .print-section h3 { page-break-after: avoid !important; break-after: avoid !important; }
   .print-table { page-break-inside: auto !important; break-inside: auto !important; }
@@ -440,7 +411,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .print-demographics-table th, .print-demographics-table td { padding: 4px 4px !important; }
   .print-section.compact { margin-top: 10px !important; }
 }
-
 
 /* Final print readability: banded rows + shaded YTD columns */
 .print-table tbody tr:nth-child(even) td { background:#F7F6F2; }
@@ -453,7 +423,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .print-table .print-total-row td { background:#EEF2FA !important; }
 .print-table .print-total-row .print-ytd-cell,
 .print-table.print-ytd-table .print-total-row td:last-child { background:#DDE6F6 !important; }
-
 
 /* ========================================================================
    HOLLOWAY VISUAL REFRESH — July 2026
@@ -543,7 +512,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .cg-bar.is-met span { background:var(--green); }
 
 /* ---- Referral: choosing a program ---- */
-.referral-programs { display:flex; flex-direction:column; gap:10px; }
+
 .referral-program-btn { display:flex; align-items:center; justify-content:space-between; gap:14px;
   width:100%; text-align:left; font:inherit; cursor:pointer; padding:15px 17px;
   background:var(--white); border:1px solid var(--border); border-left:4px solid var(--gold);
@@ -565,14 +534,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .pr-msg.err { color:var(--red); }
 .pr-msg.ok  { color:var(--green); }
 .eq-hint { font-size:11.5px; color:var(--gray-500); margin-top:8px; }
-
-.tg-card { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:12px 15px; min-width:170px; flex:1 1 170px; }
-.tg-label { font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--gray-400); }
-.tg-value { font-family:var(--font-sans); font-size:20px; font-weight:700; color:var(--navy); margin-top:3px; }
-.tg-sub { font-size:11.5px; color:var(--gray-500); margin-top:2px; }
-.tg-bar { height:5px; border-radius:999px; background:var(--gray-100); margin-top:8px; overflow:hidden; }
-.tg-bar span { display:block; height:100%; background:var(--green); }
-.tg-bar.is-short span { background:var(--gold); }
 
 /* ---- Monthly operating report (programs with has_monthly_report) ---- */
 .mr-head { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; margin-top:16px; }
@@ -768,7 +729,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .btn-sm { min-height: 32px; padding: 5px 10px; border-radius: 8px; font-size: 11.5px; }
 
 /* Cards and surfaces */
-.card, .client-table-wrap, .readiness-row, .submission-row, .room-card, .generated-metric, .kpi-card, .today-card {
+.card, .client-table-wrap, .readiness-row, .generated-metric, .kpi-card, .today-card {
   border-color: var(--border);
   box-shadow: var(--shadow);
 }
@@ -875,13 +836,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .form-footer { padding: 16px 26px; background: #F7F8FA; }
 
 /* Operational boards, rows, and progress components */
-.room-board { gap: 14px; }
-.room-card { border-radius: 14px; padding: 14px; transition: transform .15s ease, box-shadow .15s ease; }
-.room-card:hover { transform: translateY(-1px); box-shadow: 0 11px 27px rgba(15,23,42,.07); }
-.room-num { color: #7C8998; }
-.room-name { margin-top: 7px; }
-.readiness-row, .submission-row { border-radius: 13px; padding: 16px 18px; }
-.task-row, .check-row, .goal-row, .readiness-check { border-radius: 10px; border-color: var(--border); }
+
+.readiness-row { border-radius: 13px; padding: 16px 18px; }
+.check-row, .goal-row, .readiness-check { border-radius: 10px; border-color: var(--border); }
 .quick-chip { border-color: var(--border); padding: 8px 13px; font-weight: 700; transition: background-color .15s ease, border-color .15s ease, transform .15s ease; }
 .quick-chip:hover { transform: translateY(-1px); }
 .quarter-selector { gap: 7px; margin-bottom: 20px; }
@@ -921,20 +878,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   body, button, input, select, textarea { font-family: var(--font-sans) !important; }
 }
 
-
 /* Dashboard redesign: performance-first layout, demographics, collapsed ops */
-.dash-toprow { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
-.dash-toprow .quarter-selector { margin-bottom:0; }
-.dash-period-label { font-size:11.5px; color:var(--gray-500); flex:1; }
-
-.perf-card { margin-bottom:16px; }
-.perf-hero-row { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:20px; margin-bottom:16px; }
-.perf-hero { border-right:1px solid var(--border); padding-right:16px; }
-.perf-hero-value { font-family:var(--font-sans); font-size:34px; font-weight:750; color:var(--green); letter-spacing:-.03em; margin-top:4px; }
-.perf-sub-value { font-family:var(--font-sans); font-size:24px; font-weight:750; color:var(--navy); letter-spacing:-.03em; margin-top:6px; }
-.perf-strip-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; border-top:1px solid var(--gray-100); padding-top:14px; }
-.perf-strip-value { font-size:18px; font-weight:750; color:var(--navy); margin-top:4px; }
-@media (max-width:800px) { .perf-hero-row, .perf-strip-row { grid-template-columns:1fr 1fr; } .perf-hero { border-right:none; padding-right:0; } }
 
 .demo-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
 .demo-group-title { font-size:11px; font-weight:700; letter-spacing:.03em; color:var(--gray-500); margin-bottom:10px; }
@@ -950,25 +894,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
    number looked exactly like a passing one. Tone is now driven by
    performance against CONFIG.PH_RATE_TARGET, and a meter puts the target
    on screen as a physical mark rather than leaving it implied.          */
-.perf-hero-value.tone-good    { color:var(--green); }
-.perf-hero-value.tone-warn    { color:var(--amber); }
-.perf-hero-value.tone-bad     { color:var(--red); }
-.perf-hero-value.tone-neutral { color:var(--navy); }
-.perf-hero-value .hero-of { font-size:15px; font-weight:600; color:var(--gray-500); margin-left:7px; letter-spacing:0; }
-.hero-target { font-size:11.5px; font-weight:700; margin-top:2px; }
-.hero-target-good    { color:var(--green); }
-.hero-target-warn    { color:var(--amber); }
-.hero-target-bad     { color:var(--red); }
-.hero-target-neutral { color:var(--gray-500); }
+
 /* margin-bottom clears the "target" caption rendered under the tick mark. */
-.hero-meter { position:relative; height:6px; background:var(--gray-100); border-radius:99px; margin:10px 0 20px; overflow:visible; }
-.hero-meter-fill { height:6px; border-radius:99px; transition:width .25s ease; }
-.hero-meter-fill.tone-good    { background:var(--green); }
-.hero-meter-fill.tone-warn    { background:var(--amber); }
-.hero-meter-fill.tone-bad     { background:var(--red); }
-.hero-meter-fill.tone-neutral { background:var(--gray-400); }
-.hero-meter-target { position:absolute; top:-3px; width:2px; height:12px; background:var(--navy); border-radius:1px; }
-.hero-meter-target::after { content:'target'; position:absolute; top:13px; left:50%; transform:translateX(-50%); font-size:9px; font-weight:700; letter-spacing:.04em; color:var(--gray-500); }
 
 /* ── TRENDS: sparklines + prior-quarter deltas ───────────────────────────
    Single series per sparkline, so no legend — the metric label above names
@@ -976,26 +903,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
    the accent; the numbers stay in text tokens rather than wearing the data
    colour. Delta colour is direction × whether up is good, which is why
    average length of stay passes goodDirection:'down'.                    */
-.trend-row { display:flex; align-items:center; gap:9px; margin-top:7px; flex-wrap:wrap; }
+
 .spark { flex:0 0 auto; overflow:visible; }
 .spark circle[fill="transparent"] { cursor:default; }
-.trend-text { display:flex; flex-direction:column; gap:1px; min-width:0; }
+
 /* gray-400 is only 2.93:1 on white — under the 4.5:1 AA floor for text this
    small. New trend text uses gray-500 (4.90:1) so it is actually readable. */
-.trend-series { font-size:10.5px; color:var(--gray-500); font-variant-numeric:tabular-nums; white-space:nowrap; }
+
 .delta { font-size:10.5px; font-weight:700; white-space:nowrap; }
-.delta-good { color:var(--green); }
-.delta-bad  { color:var(--red); }
-.delta-flat { color:var(--gray-500); font-weight:600; }
-@media (max-width:800px) { .trend-series { display:none; } }
 
 /* font/line-height inherit stops the UA button defaults from shifting this
    tile's label a few pixels below its neighbours in the strip row. */
-.perf-strip-link { display:block; width:100%; text-align:left; background:none; border:none; padding:0; cursor:pointer; border-radius:6px; font:inherit; line-height:inherit; color:inherit; }
-.perf-strip-row > * { align-self:start; }
-.perf-strip-link:hover .perf-strip-value { color:var(--navy-light); }
-.perf-strip-link:hover .strip-go { opacity:1; transform:translateX(2px); }
-.strip-go { font-size:13px; margin-left:6px; color:var(--gray-400); opacity:0; transition:all .15s ease; display:inline-block; }
 
 /* ── EARLY WARNING INDICATORS ────────────────────────────────────────────
    Tone here comes only from a contract benchmark. Where the contract is
@@ -1226,8 +1144,6 @@ th.sortable:hover { color:var(--navy); }
 .fy-switcher:hover { background:rgba(255,255,255,.2); }
 .fy-switcher option { color:var(--gray-800); background:var(--white); }
 
-
-
 /* ========================================================================
    FISCAL REPORTING — FY 2027
    Monthly actuals, budget monitoring, GL/backup uploads, invoice generation,
@@ -1257,16 +1173,12 @@ th.sortable:hover { color:var(--navy); }
 .fiscal-amount-input{width:118px;min-height:35px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums}
 .fiscal-note-input{width:190px;min-height:35px;border:1px solid var(--border);border-radius:8px;padding:6px 8px}
 .fiscal-over{color:var(--red);font-weight:800}.fiscal-near{color:var(--amber);font-weight:800}
-.fiscal-doc-upload{border:1px dashed #BAC6D3;border-radius:12px;background:#F8FAFC;padding:16px}
-.fiscal-doc-list{display:grid;gap:8px;margin-top:12px}
-.fiscal-doc-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px}
-.fiscal-doc-meta{font-size:11px;color:var(--gray-500);margin-top:2px}
+
 .fiscal-checks{display:grid;gap:8px}.fiscal-check{display:grid;grid-template-columns:24px 1fr auto;gap:9px;align-items:start;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:#fff}
 .fiscal-check.ok{border-left:4px solid var(--green)}.fiscal-check.warning{border-left:4px solid var(--amber)}.fiscal-check.error{border-left:4px solid var(--red)}.fiscal-check.info{border-left:4px solid var(--navy)}
 .fiscal-check .icon{font-weight:900}.fiscal-check .detail{font-size:11.5px;color:var(--gray-600);margin-top:2px}.fiscal-check .fix{font-size:11px;color:var(--gray-500);text-align:right;max-width:250px}
 .fiscal-summary-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:18px}
-.fiscal-source-note{border:1px solid var(--border);border-radius:12px;background:#FBFCFD;padding:12px 14px;font-size:11.5px;color:var(--gray-600)}
-.fiscal-source-note summary{cursor:pointer;color:var(--navy);font-weight:750}
+
 .fiscal-invoice{border:1px solid var(--border);border-radius:16px;background:#fff;padding:26px;box-shadow:var(--shadow);max-width:980px}
 .fiscal-invoice-head{display:flex;justify-content:space-between;gap:22px;border-bottom:3px solid var(--gold);padding-bottom:14px;margin-bottom:18px}
 .fiscal-invoice-title{font-size:27px;font-weight:760;color:var(--navy);letter-spacing:-.03em}
@@ -1278,22 +1190,20 @@ th.sortable:hover { color:var(--navy); }
 .fiscal-review-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
 .fiscal-month-row-active td{background:#F5F8FC!important}
 @media(max-width:1100px){.fiscal-kpis{grid-template-columns:repeat(3,1fr)}.fiscal-summary-grid{grid-template-columns:1fr}}
-@media(max-width:700px){.fiscal-kpis{grid-template-columns:1fr 1fr}.fiscal-address-grid{grid-template-columns:1fr}.fiscal-invoice-head{display:block}.fiscal-invoice-meta{text-align:left;margin-top:12px}.fiscal-doc-row{align-items:flex-start;flex-direction:column}}
+@media(max-width:700px){.fiscal-kpis{grid-template-columns:1fr 1fr}.fiscal-address-grid{grid-template-columns:1fr}.fiscal-invoice-head{display:block}.fiscal-invoice-meta{text-align:left;margin-top:12px}}
 @media(max-width:480px){.fiscal-kpis{grid-template-columns:1fr}}
 @media print{
   .fiscal-invoice{border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;max-width:none!important}
-  .fiscal-invoice .no-print{display:none!important}
+  
   .fiscal-invoice-head{break-after:avoid;page-break-after:avoid}
   .fiscal-invoice table{break-inside:avoid;page-break-inside:avoid}
   .fiscal-print-backup{break-before:page;page-break-before:always;margin-top:0!important}
 }
 
-
 /* ========================================================================
    FISCAL LIVE CALCULATIONS / EXPORT / CITY PAYMENT TRACKING
    ======================================================================== */
-.fiscal-live-note{display:inline-flex;align-items:center;gap:6px;margin-left:8px;padding:3px 8px;border-radius:999px;background:#EEF7F2;color:var(--green);font-size:10.5px;font-weight:750;vertical-align:middle}
-.fiscal-live-note::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+
 .fiscal-payment-layout{display:grid;grid-template-columns:.82fr 1.18fr;gap:18px;margin-bottom:18px}
 .fiscal-payment-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px;background:#fff;box-shadow:var(--shadow)}
 .fiscal-payment-table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:1450px;font-variant-numeric:tabular-nums}
@@ -1311,7 +1221,6 @@ th.sortable:hover { color:var(--navy); }
 @media(max-width:700px){.fiscal-city-kpis{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.fiscal-city-kpis{grid-template-columns:1fr}}
 
-
     /* Collapsible Clients group in the sidebar */
     .sidebar-parent { position:relative; padding-right:32px; }
     .sidebar-caret { position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:0; margin:0; padding:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; border-radius:5px; color:var(--gray-400); line-height:0; }
@@ -1326,13 +1235,10 @@ th.sortable:hover { color:var(--navy); }
     .sidebar-parent.has-active-child .sidebar-caret { color:var(--gold); }
 
     /* Partner referral portal */
-    .referral-card { max-width: 780px; }
-    .referral-step-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px; }
-    .referral-step-head h3 { font-size:15px; color:var(--navy); margin:0; font-weight:800; }
-    .referral-progress { font-size:11.5px; color:var(--gray-400); }
+
     .referral-criteria { display:flex; flex-direction:column; gap:10px; }
     .referral-crit { border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
-    .referral-crit.is-missing { border-color:#C0392B; background:#fdf6f5; }
+    
     .referral-crit-top { display:flex; gap:10px; align-items:flex-start; }
     .referral-crit-top span { flex:1; font-size:12.5px; line-height:1.45; }
     .referral-file { margin-top:10px; padding-left:26px; }
@@ -1340,8 +1246,7 @@ th.sortable:hover { color:var(--navy); }
     .referral-doc-note { font-size:11.5px; color:var(--gray-400); margin-top:4px; }
     .referral-error { color:#C0392B; font-size:12.5px; margin-top:12px; }
     .referral-code-input { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:2px; text-transform:uppercase; font-size:16px; text-align:center; }
-    .referral-done { text-align:center; padding:14px 0; }
-    .referral-done .tick { font-size:34px; color:#1E8449; }
+
 </style>
 
 <style id="ytd-contract-dashboard-styles">
@@ -1357,7 +1262,7 @@ th.sortable:hover { color:var(--navy); }
 .ytd-kpi .label{font-size:10.5px;font-weight:800;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em}
 .ytd-kpi .value{font-size:29px;line-height:1.05;font-weight:800;color:var(--navy);margin-top:7px;font-variant-numeric:tabular-nums}
 .ytd-kpi .sub{font-size:11.5px;color:var(--gray-500);margin-top:5px;line-height:1.35}
-.ytd-kpi .micro{font-size:10.5px;color:var(--gray-400);margin-top:4px}
+
 .dashboard-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:24px 0 10px}
 .dashboard-section-head h2{font-size:15px;color:var(--navy);margin:0;font-weight:800}
 .dashboard-section-head .hint{font-size:11.5px;color:var(--gray-400);text-align:right}
@@ -1457,10 +1362,7 @@ body{
 button, input, select, textarea { font-family: var(--font-ui); }
 
 /* ---- things that name something take the serif ---- */
-.page-title, .card-title, .form-modal-title, .login-title, .brand-program,
-.print-title, .fiscal-invoice-title, .referral-step-head h3,
-.kpi-value, .hero-value, .ytd-kpi-value, .mr-stat-value, .bed-stat-value,
-.sla-card-value, .cg-value, .tg-value, .tally dd, .goal-name{
+.page-title, .card-title, .form-modal-title, .login-title, .brand-program, .print-title, .fiscal-invoice-title, .kpi-value, .mr-stat-value, .bed-stat-value, .sla-card-value, .cg-value, .tally dd, .goal-name {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -.022em;
@@ -1473,20 +1375,16 @@ button, input, select, textarea { font-family: var(--font-ui); }
 
 /* Figures are the display face's other job: set them a touch tighter so a
    column of them reads as one block rather than as separate words. */
-.kpi-value, .hero-value, .ytd-kpi-value, .mr-stat-value, .bed-stat-value,
-.sla-card-value, .cg-value, .tg-value, .tally dd{ letter-spacing: -.03em; }
+.kpi-value, .mr-stat-value, .bed-stat-value, .sla-card-value, .cg-value, .tally dd { letter-spacing: -.03em; }
 
 /* Figures are read in columns, so they line up in columns. */
-.kpi-value, .hero-value, .ytd-kpi-value, .mr-stat-value, .bed-stat-value,
-.sla-card-value, .cg-value, .tg-value, .tally dd,
-.client-table td, .svc-table td, .print-table td, table td, table th{
+.kpi-value, .mr-stat-value, .bed-stat-value, .sla-card-value, .cg-value, .tally dd, .client-table td, .svc-table td, .print-table td, table td, table th {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
 /* ---- labels earn their tracking ---- */
-.section-label, .kpi-label, .ytd-kpi-label, .mr-stat-label, .bed-stat-label,
-.sla-card-label, .tg-label, .cg-group-title, .sidebar-label{
+.section-label, .kpi-label, .mr-stat-label, .bed-stat-label, .sla-card-label, .cg-group-title, .sidebar-label {
   font-family: var(--font-ui);
   font-weight: 700;
   letter-spacing: .085em;
@@ -1496,14 +1394,14 @@ button, input, select, textarea { font-family: var(--font-ui); }
 .field-hint{ line-height: 1.55; }
 
 /* ---- surfaces: one hairline, and a shadow only where something lifts ---- */
-.card, .ytd-kpi, .kpi-card, .bed-stat, .mr-stat, .sla-card, .tg-card{
+.card, .ytd-kpi, .kpi-card, .bed-stat, .mr-stat, .sla-card {
   box-shadow: none;
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 .card{ border-color: var(--rule); }
 .card-header{ border-bottom: 1px solid var(--rule); }
-.form-modal, .toast, .confirm-box{ box-shadow: var(--shadow-lg); }
+.form-modal, .toast { box-shadow: var(--shadow-lg); }
 .bed-tile{ box-shadow: none; border-radius: var(--radius); }
 .bed-tile:hover{ box-shadow: 0 4px 14px rgba(27,47,91,.10); }
 
@@ -1667,6 +1565,74 @@ button, input, select, textarea { font-family: var(--font-ui); }
 .cn-note-cell{white-space:pre-wrap;max-width:520px;line-height:1.5}
 .btn.btn-danger[data-armed="1"]{box-shadow:0 0 0 3px rgba(200,40,40,.18)}
 </style>
+<style id="layout-polish">
+/* Layout polish (Nov 2026): narrow-screen navigation, table containment,
+   caseload scanning. Screen only; print templates are unaffected. */
+@media screen {
+  /* A flex child without min-width:0 grows to fit wide tables, which pushed
+     the whole page sideways on narrow screens. Tables now scroll in place. */
+  .main { min-width: 0; }
+  .client-table-wrap { max-width: 100%; -webkit-overflow-scrolling: touch; }
+
+  /* Menu button and drawer: the sidebar was hidden below 800px with no
+     other way to move between screens. */
+  .nav-toggle { display: none; }
+  .nav-scrim { display: none; }
+
+  .dup-alert details > summary { cursor: pointer; font-weight: 700; color: var(--navy); font-size: 12.5px; margin: 8px 0 2px; }
+  .dup-alert details[open] > summary { margin-bottom: 10px; }
+}
+@media screen and (max-width: 800px) {
+  .nav-toggle {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 38px; height: 38px; margin-right: 10px; border-radius: 10px;
+    background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.22); color: var(--white); cursor: pointer;
+  }
+  .nav-toggle svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+  .sidebar {
+    display: block; position: fixed; left: 0; top: 60px; z-index: 90;
+    width: min(280px, 84vw); height: calc(100vh - 60px); height: calc(100dvh - 60px);
+    transform: translateX(-102%); transition: transform .2s ease; box-shadow: 0 12px 40px rgba(15,23,42,.22);
+  }
+  body.nav-open .sidebar { transform: none; }
+  body.nav-open .nav-scrim { display: block; position: fixed; inset: 60px 0 0 0; z-index: 80; background: rgba(15,23,42,.35); }
+
+  /* Header: one line for the portal name, avatar without the name. */
+  .topbar-brand { min-width: 0; flex: 1 1 auto; }
+  .topbar-brand > div { min-width: 0; }
+  .brand-program { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-right { flex-shrink: 0; }
+
+  /* Page header: actions sit on one row under the title. */
+  .page-header > div:last-child:not(:first-child) { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* To-do rows: badge and text on top, action underneath. */
+  .todo-row { grid-template-columns: auto 1fr !important; row-gap: 8px; }
+  .todo-row > :last-child { grid-column: 2; justify-self: start; }
+
+  /* Wide tables scroll sideways; the first column (HMIS ID) stays in view. */
+  .client-table td:first-child { position: sticky; left: 0; z-index: 1; background: var(--white); box-shadow: 1px 0 0 var(--border); }
+  .client-table tbody tr:nth-child(even) td:first-child { background: #FCFCFB; }
+  .client-table th:first-child { left: 0; z-index: 3; box-shadow: 1px 0 0 var(--border); }
+
+  /* Intake form steps: a compact row instead of three stacked cards. */
+  .form-modal .wizard-steps { flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-bottom: 14px; }
+  .form-modal .wizard-step { min-width: 128px; padding: 7px 10px; }
+  .form-modal .wizard-step .name { font-size: 12.5px; }
+}
+@media screen and (max-width: 560px) {
+  .main { padding: 16px 14px 36px; }
+  .topbar { padding: 0 12px; }
+  .weho-logo-header { display: none; }
+  #user-name { display: none; }
+  .user-pill { padding: 4px; }
+  .program-switch label { display: none; }
+  /* Two tiles per row keeps the dashboard scannable instead of one long column. */
+  .ytd-kpi-grid, .housing-outcome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ytd-kpi { padding: 12px; }
+  .page-title { font-size: 24px; }
+}
+</style>
 
 </head>
 
@@ -1763,6 +1729,7 @@ button, input, select, textarea { font-family: var(--font-ui); }
 <div id="app" style="display:none;">
   <header class="topbar">
     <div class="topbar-brand">
+      <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="main-sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <img class="weho-logo-header" src="https://www.governmentjobs.com/AgencyPages/weho/agencyImages/download/weho_white_on_blue.jpg" alt="City of West Hollywood logo" />
       <div>
         <div class="brand-program" id="brand-program">Interim Housing &amp; Shelter Reporting Portal</div>
@@ -1782,7 +1749,8 @@ button, input, select, textarea { font-family: var(--font-ui); }
   </header>
 
   <div class="app-shell">
-    <aside class="sidebar">
+    <div class="nav-scrim" id="nav-scrim" aria-hidden="true"></div>
+    <aside class="sidebar" id="main-sidebar">
       <nav aria-label="Main navigation">
         <div class="sidebar-section">
           <div class="sidebar-label" id="role-nav-label">Workspace</div>
@@ -3842,18 +3810,6 @@ const App = {
     return `<span class="regional-ref" title="${this.escape(ref.source)}">${this.escape(ref.label)}</span>`;
   },
 
-  benchmarkNote(key, value) {
-    const b = CONFIG.BENCHMARKS[key];
-    if (!b) return '';
-    const parts = [];
-    if (b.contract != null) {
-      if (value == null) parts.push(`Contract ${b.direction === 'below' ? 'ceiling' : 'target'} ${b.contract}%`);
-      else if (b.direction === 'below') parts.push(value > b.contract ? `${value - b.contract} pts over the ${b.contract}% contract ceiling` : `within the ${b.contract}% contract ceiling`);
-      else if (value === b.contract) parts.push(`meets the ${b.contract}% contract target`);
-      else parts.push(value > b.contract ? `${value - b.contract} pts above the ${b.contract}% target` : `${b.contract - value} pts below the ${b.contract}% target`);
-    }
-    return parts.join('');
-  },
 
 
   // 4-point sparkline. Single series, so no legend (the label names it); line in
@@ -4130,8 +4086,11 @@ const App = {
     const r = this.data.reports[q] || {};
     const s = this.reportScope(q);
     const demo = this.demographicTotals(q);
-    const persons = Number(r.persons_quarter || 0);
-    const ytdPersons = this.calcPersonsYtd(q);
+    // When figures come from client records, compare against the same live
+    // counts; the saved row is empty until the quarter's report is first saved.
+    const generated = this.useClientGeneratedReporting?.();
+    const persons = generated ? Number(this.generatedPersonsQuarter(q) || 0) : Number(r.persons_quarter || 0);
+    const ytdPersons = generated ? this.ytdClientsServed(q).length : this.calcPersonsYtd(q);
     const ageYtd = this.ageBands.reduce((sum, age) => sum + this.sumDemoRow(this.calcAgeGenderYtd(q, age)), 0);
     const ethYtd = this.ethnicityKeys.reduce((sum, k) => sum + Number(this.calcSimpleDemoYtd(q, 'demographics_ethnicity', k, r.demographics_ethnicity?.[k] || 0) || 0), 0);
     const langYtd = this.languageKeys.reduce((sum, k) => sum + Number(this.calcSimpleDemoYtd(q, 'demographics_language', k, r.demographics_language?.[k] || 0) || 0), 0);
@@ -12616,17 +12575,6 @@ const App = {
     return value >= b.contract * 0.7 ? 'warn' : 'bad';
   };
 
-  const previousBenchmarkNote = App.benchmarkNote;
-  App.benchmarkNote = function(key, value){
-    const b = this.benchmark(key);
-    if (!b) return '';
-    // Temporarily present the program's figures to the original wording so the
-    // note keeps its exact phrasing rather than being rewritten here.
-    const saved = CONFIG.BENCHMARKS[key];
-    CONFIG.BENCHMARKS[key] = b;
-    try { return previousBenchmarkNote.call(this, key, value); }
-    finally { CONFIG.BENCHMARKS[key] = saved; }
-  };
 
 
   /* -------------------------------------------------------- plan reviews */
@@ -18092,7 +18040,7 @@ const App = {
       const out = document.getElementById('cf-bed-note');
       if (!out) return;
       const msgs = [];
-      if (bed?.designation === 'fee_for_service') msgs.push('Fee-for-service bed: nights are billed.');
+      if (bed?.designation === 'fee_for_service' && !this.openReservedBeds?.().length) msgs.push('All reserved beds are full, so this fee-for-service bed is the right choice. Its nights are billable while census is above the reserved beds.');
       if (genderMismatch(bed, gender)) msgs.push(`This bed is reserved for ${GENDER_LABEL[bed.gender_category].toLowerCase()}. Confirm the placement.`);
       out.innerHTML = msgs.map(m => `<div class="dq-warning">⚠ ${esc(m)}</div>`).join('');
     };
@@ -22151,6 +22099,265 @@ Willoughby Ave.|7463-7949 O;8159-8299 O;8300-8328`;
     .mq-input { text-align: right; margin-left: auto; }
     @media print { .mq-two { display: block; } }`;
   document.head.appendChild(css);
+})();
+
+
+/* ==========================================================================
+   Ease-of-use additions (Nov 2026)
+     1. Fee-for-service bed warning: a soft warning, never a block, when staff
+        pick a fee-for-service bed while a reserved bed is open.
+     2. Month-end data check: record gaps that affect the monthly report,
+        each with a link to the client record.
+     3. Monthly report checklist: what is done and what is left, at the top
+        of the Monthly Report.
+   ========================================================================== */
+(function(){
+  const esc = s => App.escape(s ?? '');
+
+  /* ---------------------------------------------- 1. fee-for-service warning */
+  App.openReservedBeds = function(){
+    return (this.bedsFor?.() || []).filter(b => b.designation === 'reserved' && b.active !== false && this.bedStatus(b) === 'vacant_available');
+  };
+  const ffsWarning = (n) => n
+    ? `${n} reserved bed${n === 1 ? ' is' : 's are'} open. Use a reserved bed first; fee-for-service beds are for when every reserved bed is full.`
+    : '';
+
+  // Intake form: add the warning under the bed picker.
+  const baseOpenClientForm = App.openClientForm;
+  App.openClientForm = function(){
+    const out = baseOpenClientForm.apply(this, arguments);
+    const sel = document.getElementById('cf-bed');
+    if (!sel || sel.dataset.ffsWarn) return out;
+    sel.dataset.ffsWarn = '1';
+    const show = () => {
+      const box = document.getElementById('cf-bed-note'); if (!box) return;
+      box.querySelector('.ffs-first')?.remove();
+      const bed = this.bedsFor().find(b => b.id === sel.value);
+      if (bed?.designation !== 'fee_for_service') return;
+      const msg = ffsWarning(this.openReservedBeds().length);
+      if (msg) box.insertAdjacentHTML('afterbegin', `<div class="dq-warning ffs-first">⚠ ${esc(msg)}</div>`);
+    };
+    sel.addEventListener('change', () => setTimeout(show, 0));
+    return out;
+  };
+
+  // Bed Board: the same warning in the "Assign a client" block of an FFS bed.
+  const baseBedPanel = App.renderBedPanel;
+  App.renderBedPanel = function(){
+    const out = baseBedPanel.apply(this, arguments);
+    const bed = this.bedsFor().find(b => b.id === this._bedPanelId);
+    const btn = document.getElementById('bed-assign-btn');
+    if (!bed || !btn || bed.designation !== 'fee_for_service') return out;
+    const msg = ffsWarning(this.openReservedBeds().length);
+    if (msg) btn.insertAdjacentHTML('beforebegin', `<div class="dq-warning" style="margin-top:10px">⚠ ${esc(msg)}</div>`);
+    return out;
+  };
+
+  /* --------------------------------------------------- 2. month-end data check */
+  // Each check returns the clients it applies to. Only gaps that change the
+  // monthly figures or the bed record are listed.
+  App.monthlyDataIssues = function(month){
+    const s = month, e = this.monthEnd(month), today = this.localDate();
+    const asOf = e < today ? e : today;
+    const clients = this.data.clients || [];
+    const served = clients.filter(c => this.clientOverlaps(c, s, e));
+    const exitedInMonth = clients.filter(c => { const d = this.dateOnly(c.exit_date); return d && d >= s && d <= e; });
+    const activeNow = clients.filter(c => this.clientStatus(c, asOf) === 'Active');
+    const beds = this.programHas('has_beds');
+    const stays = this.data.stays || [];
+    const openStay = id => stays.find(x => x.client_id === id && !x.end_date);
+    const blank = v => v == null || String(v).trim() === '' || /^(unknown|data not collected|client doesn.t know|client prefers not)/i.test(String(v).trim());
+    const svcIds = new Set([...(this.data.clientServices || []), ...(this.data.caseNotes || [])]
+      .filter(x => { const d = this.dateOnly(x.service_date || x.note_date); return d && d >= s && d <= e; })
+      .map(x => x.client_id));
+    const checks = [
+      { key:'exit-dest', label:'Exit destination missing', why:'Exits without a destination are counted as unknown outcomes.',
+        list: exitedInMonth.filter(c => !c.exit_destination_type) },
+      { key:'exit-order', label:'Exit date before entry date', why:'Length of stay and bed nights cannot be counted.',
+        list: served.filter(c => { const a = this.dateOnly(c.entry_date), b = this.dateOnly(c.exit_date); return a && b && b < a; }) },
+      { key:'age', label:'Age missing', why:'Left out of the age and gender table.',
+        list: served.filter(c => !this.ageBandForClient(c)) },
+      { key:'gender', label:'Gender missing', why:'Counted as unknown gender.', list: served.filter(c => blank(c.gender)) },
+      { key:'race', label:'Race / ethnicity missing', why:'Left out of the race and ethnicity table.', list: served.filter(c => blank(c.race_ethnicity)) },
+      { key:'lang', label:'Household language missing', why:'Left out of the language table.', list: served.filter(c => blank(c.primary_language)) },
+      { key:'no-svc', label:'No services or case notes this month', why:'Active participants should have at least one recorded contact each month.',
+        list: served.filter(c => this.clientStatus(c, asOf) === 'Active' && this.dateOnly(c.entry_date) < e && !svcIds.has(c.id)) }
+    ];
+    if (beds) {
+      checks.splice(2, 0,
+        { key:'no-bed', label:'Active with no bed assigned', why:'Bed nights are not counted for this participant.',
+          list: activeNow.filter(c => !openStay(c.id)) },
+        { key:'open-stay', label:'Exited but still holding a bed', why:'The bed shows as occupied and keeps counting nights.',
+          list: clients.filter(c => this.dateOnly(c.exit_date) && this.dateOnly(c.exit_date) <= today && openStay(c.id)) });
+    }
+    return checks.map(c => Object.assign(c, { count: c.list.length }));
+  };
+
+  App.monthlyDataCheckHtml = function(issues){
+    const open = issues.filter(i => i.count);
+    if (!open.length) return '<p class="field-hint" style="margin:0">No gaps found in client and bed records for this month.</p>';
+    const chip = c => `<button type="button" class="mc-client" data-mc-client="${esc(c.id)}">${esc(this.clientDisplayId ? this.clientDisplayId(c) : c.id)}</button>`;
+    return '<div class="mc-issues">' + open.map(i => `<div class="mc-issue">
+        <div class="mc-issue-head"><strong>${esc(i.label)}</strong><span class="badge badge-amber">${i.count}</span></div>
+        <div class="field-hint">${esc(i.why)}</div>
+        <div class="mc-clients">${i.list.slice(0, 40).map(chip).join('')}${i.count > 40 ? `<span class="field-hint">+${i.count - 40} more</span>` : ''}</div>
+      </div>`).join('') + '</div>';
+  };
+
+  /* --------------------------------------------- 3. monthly report checklist */
+  const val = id => (document.getElementById(id)?.value || '').trim();
+
+  App.monthlyChecklist = function(month, issues){
+    const r = this.monthlyReport(month);
+    const sq = this.storyQuarterFor?.(month);
+    const gaps = issues.filter(i => i.count).reduce((t, i) => t + i.count, 0);
+    const field = (id, saved) => document.getElementById(id) ? !!val(id) : !!saved;
+    const sec = r?.narrative_sections || {};
+    const items = [
+      { ok: !!r?.generated_at, label:'Figures generated', detail: r?.generated_at ? 'Updated from portal records.' : 'Figures fill in automatically once the month is opened.' },
+      { ok: !gaps, label:'Data check', detail: gaps ? `${gaps} item${gaps === 1 ? '' : 's'} to review below.` : 'No gaps found.', soft: true },
+      { ok: field('mr-narrative', r?.narrative_text), label:'Program highlights' }
+    ];
+    if (document.getElementById('mr-sec-housing') || r?.narrative_sections) {
+      items.push({ ok: field('mr-sec-housing', sec.housing), label:'Housing progress' });
+      items.push({ ok: field('mr-sec-challenges', sec.challenges), label:'Challenges and corrective actions' });
+      items.push({ ok: field('mr-sec-feedback', sec.feedback), label:'Client feedback' });
+    }
+    if (sq) {
+      const story = field('mr-sec-story', sec.story);
+      const consent = document.getElementById('mr-sec-story-consent') ? document.getElementById('mr-sec-story-consent').checked : !!sec.story_consent;
+      items.push({ ok: story && consent, label:`Client success story (${sq.label})`, detail: story && !consent ? 'Confirm the client agreed to share it.' : '' });
+    }
+    const submitted = ['submitted','accepted'].includes(r?.status);
+    items.push({ ok: submitted, label: r?.status === 'accepted' ? 'Accepted by the City' : 'Certified and submitted',
+      detail: submitted ? `Submitted ${this.formatDate(this.dateOnly(r.submitted_at))}.` : `Due ${this.formatDate(this.dateOnly(r?.due_date) || this.monthlyDueDate(month))}.` });
+    return items;
+  };
+
+  App.renderMonthlyChecklist = function(){
+    const el = document.getElementById('view-monthly');
+    const box = el?.querySelector('#mc-card'); if (!box) return;
+    const month = this.monthlyMonth();
+    const items = this.monthlyChecklist(month, this._mcIssues || []);
+    const done = items.filter(i => i.ok).length;
+    const required = items.filter(i => !i.soft);
+    const left = required.filter(i => !i.ok && !/submitted|Accepted/.test(i.label)).length;
+    box.querySelector('.mc-progress-bar span').style.width = Math.round(100 * done / items.length) + '%';
+    box.querySelector('.mc-progress-label').textContent = `${done} of ${items.length} done` + (left ? ` · ${left} section${left === 1 ? '' : 's'} left before submitting` : '');
+    box.querySelector('.mc-list').innerHTML = items.map(i => `<li class="${i.ok ? 'is-done' : (i.soft ? 'is-soft' : 'is-todo')}">
+        <span class="mc-mark" aria-hidden="true">${i.ok ? '✓' : (i.soft ? '!' : '○')}</span>
+        <span><strong>${esc(i.label)}</strong>${i.detail ? `<span class="field-hint"> · ${esc(i.detail)}</span>` : ''}</span></li>`).join('');
+  };
+
+  const baseRender = App.renderMonthly;
+  App.renderMonthly = function(){
+    const out = baseRender.apply(this, arguments);
+    const el = document.getElementById('view-monthly');
+    if (!el || !this.programHas('has_monthly_report') || el.querySelector('#mc-card')) return out;
+    const month = this.monthlyMonth(); if (!month) return out;
+    const head = el.querySelector('.mr-head'); if (!head) return out;
+    const r = this.monthlyReport(month);
+    const locked = ['submitted','accepted'].includes(r?.status);
+    this._mcIssues = this.monthlyDataIssues(month);
+    const gaps = this._mcIssues.filter(i => i.count).reduce((t, i) => t + i.count, 0);
+    head.insertAdjacentHTML('afterend', `
+      <div class="card mc-card" id="mc-card" style="margin-top:16px"><div class="card-body">
+        <div class="mc-top">
+          <div><div class="mc-title">Report checklist</div><div class="mc-progress-label field-hint"></div></div>
+          <div class="mc-progress-bar" aria-hidden="true"><span></span></div>
+        </div>
+        <ul class="mc-list"></ul>
+        <details class="mc-data" ${gaps && !locked ? 'open' : ''}>
+          <summary>Month-end data check ${gaps ? `<span class="badge badge-amber">${gaps} to review</span>` : '<span class="badge badge-green">Clear</span>'}</summary>
+          <div class="field-hint" style="margin:6px 0 10px">Gaps in client and bed records that affect this month's figures. Click an ID to open the record; the check updates when you return.${locked ? ' This month is submitted, so fixes here will not change its frozen figures.' : ''}</div>
+          ${this.monthlyDataCheckHtml(this._mcIssues)}
+        </details>
+      </div></div>`);
+    this.renderMonthlyChecklist();
+    el.querySelectorAll('[data-mc-client]').forEach(b => b.addEventListener('click', () => this.openClientForm(b.dataset.mcClient)));
+    // Narrative items tick off as staff type.
+    el.querySelectorAll('#mr-narrative, [id^="mr-sec-"]').forEach(f =>
+      f.addEventListener(f.type === 'checkbox' ? 'change' : 'input', () => this.renderMonthlyChecklist()));
+    return out;
+  };
+
+  // Re-run the check after a client record is saved from the Monthly Report.
+  const baseSaveClient = App.saveClient;
+  App.saveClient = async function(){
+    const out = await baseSaveClient.apply(this, arguments);
+    if (document.getElementById('view-monthly')?.classList.contains('active') || this.currentView === 'monthly') {
+      const card = document.getElementById('mc-card');
+      if (card) { card.remove(); this.renderMonthly(); }
+    }
+    return out;
+  };
+
+  const css = document.createElement('style');
+  css.textContent = `
+    .mc-top { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+    .mc-title { font-weight:800; color:var(--navy); font-size:14px; }
+    .mc-progress-bar { flex:0 0 220px; height:8px; background:var(--gray-100,#f1f3f5); border-radius:999px; overflow:hidden; }
+    .mc-progress-bar span { display:block; height:100%; background:var(--green,#2e7d32); transition:width .2s; }
+    .mc-list { list-style:none; margin:12px 0 0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:6px 18px; }
+    .mc-list li { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; }
+    .mc-mark { flex:0 0 18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; }
+    .mc-list .is-done .mc-mark { background:#E6F4EA; color:#1E6B34; }
+    .mc-list .is-todo .mc-mark { border:1.5px solid var(--gray-400,#9aa0a6); color:var(--gray-400,#9aa0a6); }
+    .mc-list .is-soft .mc-mark { background:var(--amber-light,#FFF4D6); color:#7A5200; }
+    .mc-data { margin-top:14px; border-top:1px solid var(--border,#e5e7eb); padding-top:10px; }
+    .mc-data summary { cursor:pointer; font-weight:800; color:var(--navy); font-size:13px; display:flex; gap:8px; align-items:center; }
+    .mc-issues { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:8px; }
+    .mc-issue { margin-bottom:0 !important; border:1px solid var(--border,#e5e7eb); border-left:4px solid #F0C96B; border-radius:var(--radius,6px); padding:8px 10px; margin-bottom:8px; background:white; }
+    .mc-issue-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .mc-clients { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .mc-client { border:1px solid var(--border,#e5e7eb); background:#F7F9FC; color:var(--navy); border-radius:999px; padding:3px 9px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .mc-client:hover { background:#EEF2FA; border-color:var(--navy); }
+    @media print { .mc-card { display:none; } }`;
+  document.head.appendChild(css);
+})();
+
+
+/* ==========================================================================
+   Layout polish (Nov 2026)
+     - Menu button opens the sidebar as a drawer on narrow screens.
+     - Client status badges: Active reads green, not amber.
+     - The duplicate-record check folds its record list away when it is long,
+       so the caseload table stays near the top of the screen.
+   ========================================================================== */
+(function(){
+  const setNav = (open) => {
+    document.body.classList.toggle('nav-open', open);
+    document.getElementById('nav-toggle')?.setAttribute('aria-expanded', String(open));
+  };
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#nav-toggle')) { setNav(!document.body.classList.contains('nav-open')); return; }
+    if (e.target.closest('#nav-scrim')) { setNav(false); return; }
+    // Picking a screen closes the drawer; the Clients caret only expands the sub-menu.
+    const item = e.target.closest('#main-sidebar .sidebar-item');
+    if (item && !e.target.closest('.sidebar-caret') && document.body.classList.contains('nav-open')) setNav(false);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('nav-open')) setNav(false); });
+  window.matchMedia?.('(min-width: 801px)').addEventListener?.('change', (m) => { if (m.matches) setNav(false); });
+
+  // Client statuses share the report-status badge, where anything unrecognised
+  // was amber. Active participants are the normal case, so they read green.
+  const baseBadge = App.statusBadge;
+  App.statusBadge = function(st){
+    const html = baseBadge.call(this, st);
+    return st === 'active' ? html.replace('badge-amber', 'badge-green') : html;
+  };
+
+  const baseDup = App.duplicateAlertHtml;
+  App.duplicateAlertHtml = function(){
+    let html = baseDup.apply(this, arguments);
+    if (!html) return html;
+    html = html.replace(/(\d+) possible duplicate set\b/, '$1 possible duplicate sets');
+    const groups = (html.match(/class="dup-group"/g) || []).length;
+    if (groups <= 2) return html;
+    // Keep the title and guidance visible; fold the record list.
+    return html.replace(/(<div class="dup-alert-sub">[\s\S]*?<\/div>)/,
+      `$1<details><summary>Show ${groups} groups to review</summary>`).replace(/<\/div>\s*$/, '</details></div>');
+  };
 })();
 
 document.addEventListener('DOMContentLoaded', () => App.init());
