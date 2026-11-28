@@ -9219,6 +9219,94 @@ const App = {
 })();
 
 
+// ---------- Audit fixes (Nov 2026) ----------
+/* ============================================================
+   EXTENSION 17b — fixes from the 11/28/2026 portal audit.
+   1. Bed nights in an open quarter were counted through the
+      quarter's last day, so current residents were credited
+      with nights that have not happened (Q1 showed 1,680 of
+      1,840). Occupied and available nights now stop at today.
+   2. The Exits page "Year to date" option returned every exit
+      loaded, including exits before the contract year. It now
+      uses the contract year (fyStart to fyEnd), matching the
+      dashboard.
+   3. Program movement worked the starting count backward from
+      the ending count, so the check always tied, and exit
+      buckets skipped shared housing, relocation and other
+      stable exits. When reporting is generated from client
+      records, the start count (enrolled the day the quarter
+      opens) and the exits are now counted from the records
+      themselves, so the check can actually fail.
+   4. Holloway: Shared Housing / Rented Room exits count as
+      permanent housing.
+   ============================================================ */
+(function(){
+  const metricsWithLaunch = App.clientMetrics;
+  App.clientMetrics = function(q = this.currentQuarter){
+    const m = metricsWithLaunch.call(this, q);
+    const { start, end } = this.qRange(q);
+    const today = this.localDate();
+    if (today >= end) return m;
+    const effectiveStart = this.dateMax(start, this.PROGRAM_LAUNCH_DATE || start);
+    if (today < effectiveStart) { m.occupied = 0; m.available = 0; return m; }
+    m.occupied = (this.data.clients || []).reduce((sum, c) => sum + this.clientBedNights(c, effectiveStart, today), 0);
+    m.available = this.bedCapacity() * this.daysInclusive(effectiveStart, today);
+    return m;
+  };
+
+  const baseExitsInScope = App.exitsInScope;
+  App.exitsInScope = function(scope){
+    if (scope === 'ytd' || !scope) {
+      const start = this.fyStart(), end = this.fyEnd();
+      return (this.data.clients || []).filter(c => {
+        const d = this.dateOnly(c.exit_date);
+        return d && d >= start && d <= end;
+      });
+    }
+    return baseExitsInScope.call(this, scope);
+  };
+
+  App.quarterStartCount = function(q){
+    const { start } = this.qRange(q);
+    return (this.data.clients || []).filter(c => {
+      const entry = this.dateOnly(c.entry_date), exit = this.dateOnly(c.exit_date);
+      return entry && entry < start && (!exit || exit >= start);
+    }).length;
+  };
+
+  const baseQuarterExitTotal = App.quarterExitTotal;
+  App.quarterExitTotal = function(q){
+    if (this.useClientGeneratedReporting()) return this.clientMetrics(q).exits.length;
+    return baseQuarterExitTotal.call(this, q);
+  };
+
+  // Holloway counts a shared housing / rented room exit as permanent housing
+  // (decided 11/28/2026). Programs that track verified stable exits
+  // (Glendale) keep it as a stable non-permanent exit so the §8
+  // verification step still applies.
+  const baseExitCategory = App.exitDestinationCategory;
+  App.exitDestinationCategory = function(c){
+    if ((c?.exit_destination_type || '') === 'Shared Housing / Rented Room' && !this.tracksStableExitFollowUps?.()) return 'permanent';
+    return baseExitCategory.call(this, c);
+  };
+
+  const baseProgramMovement = App.programMovement;
+  App.programMovement = function(q){
+    const m = baseProgramMovement.call(this, q);
+    if (!this.useClientGeneratedReporting() || m.source === 'roster') return m;
+    const start = this.quarterStartCount(q);
+    const { intakes, exits, end } = m;
+    return Object.assign({}, m, {
+      source: 'client_records',
+      start,
+      ties: start + intakes - exits === end,
+      crossQuarterTies: m.priorQ ? m.priorEnd === start : true,
+      formula: `${start} + ${intakes} - ${exits} = ${end}`
+    });
+  };
+})();
+
+
 // ---------- Improve with AI ----------
 /* ============================================================
    EXTENSION 18 — "Generate Draft" writes a section from metrics.
